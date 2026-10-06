@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { put } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
@@ -28,10 +29,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "File too large" }, { status: 400 });
   }
 
+  const filename = `${randomUUID()}${ext}`;
+
+  // On Vercel the filesystem is read-only and wiped between requests, so customer
+  // photos go to Blob storage. Locally (no token) we keep writing to public/uploads
+  // so the app runs with no cloud setup.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`uploads/${filename}`, file, {
+      access: "public",
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url });
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-
-  const filename = `${randomUUID()}${ext}`;
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   await mkdir(uploadsDir, { recursive: true });
   await writeFile(path.join(uploadsDir, filename), buffer);

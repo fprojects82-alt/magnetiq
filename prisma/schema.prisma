@@ -3,13 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 // type: "MAGNET_SMALL" | "MAGNET_LARGE" | "EVENT_CARD"
 model Product {
-  id               String  @id @default(cuid())
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
   slug             String  @unique
   name             String
   type             String
@@ -26,7 +26,7 @@ model Product {
 }
 
 model Package {
-  id             String  @id @default(cuid())
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
   slug           String  @unique
   name           String
   description    String
@@ -45,7 +45,7 @@ model Package {
 }
 
 model Offer {
-  id          String    @id @default(cuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String
   badgeText   String?
@@ -57,7 +57,7 @@ model Offer {
 }
 
 model Coupon {
-  id         String    @id @default(cuid())
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   code       String    @unique
   percent    Int
   active     Boolean   @default(true)
@@ -69,7 +69,7 @@ model Coupon {
 
 // status: "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED"
 model Order {
-  id            String   @id @default(cuid())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
   orderNumber   String   @unique
   customerName  String
   phone         String
@@ -83,7 +83,7 @@ model Order {
   total         Int
   paymentMethod String   @default("COD")
   couponCode    String?
-  customerId    String?
+  customerId    String?  @db.ObjectId
   customer      Customer? @relation(fields: [customerId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -92,7 +92,7 @@ model Order {
 }
 
 model Customer {
-  id           String   @id @default(cuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   email        String   @unique
   phone        String
@@ -105,12 +105,12 @@ model Customer {
 }
 
 model OrderItem {
-  id               String  @id @default(cuid())
-  orderId          String
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  orderId          String  @db.ObjectId
   order            Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId        String?
+  productId        String? @db.ObjectId
   product          Product? @relation(fields: [productId], references: [id])
-  packageId        String?
+  packageId        String? @db.ObjectId
   package          Package? @relation(fields: [packageId], references: [id])
   name             String
   size             String?
@@ -121,14 +121,15 @@ model OrderItem {
 }
 
 model AdminUser {
-  id           String @id @default(cuid())
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
   email        String @unique
   passwordHash String
   createdAt    DateTime @default(now())
 }
 
+// Single-row config document, always addressed by the literal id "singleton".
 model Settings {
-  id             String @id @default("singleton")
+  id             String @id @map("_id") @default("singleton")
   whatsappNumber String
   instapayNumber String @default("")
   deliveryFee    Int
