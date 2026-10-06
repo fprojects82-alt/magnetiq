@@ -159,8 +159,15 @@ async function main() {
     },
   });
 
-  const email = process.env.ADMIN_EMAIL || "admin@magnetiq.eg";
-  const password = process.env.ADMIN_PASSWORD || "Magnetiq@2026";
+  // No credential defaults here on purpose: this file is committed, so a fallback
+  // password would be a published admin login. Set both in .env instead.
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      "ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env before seeding. See .env.example."
+    );
+  }
   const passwordHash = await bcrypt.hash(password, 10);
 
   await prisma.adminUser.upsert({
