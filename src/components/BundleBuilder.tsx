@@ -39,9 +39,12 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
   const bundle = bundles.find((b) => b.slug === slug) ?? bundles[0];
   const maxSlots = Math.max(...bundles.map((b) => b.photoSlots));
 
-  const { entries, addFiles, remove, retry, clear, uploadedUrls, uploadingCount, errorCount } =
+  const { entries, addFiles, remove, retry, clear, uploadingCount, errorCount } =
     usePhotoUploads(maxSlots);
   const [photosLater, setPhotosLater] = useState(false);
+  // How many prints of each uploaded photo (same photo more than once).
+  const [copies, setCopies] = useState<Record<string, number>>({});
+  const copiesOf = (id: string) => copies[id] ?? 1;
   const [names, setNames] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -51,9 +54,17 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
 
   const includesCard = bundle.composition.toLowerCase().includes("card");
   const slots = bundle.photoSlots;
-  const count = entries.length;
+  const count = entries.reduce((sum, e) => sum + copiesOf(e.id), 0);
   const overBy = count - slots;
-  const missing = Math.max(0, slots - uploadedUrls.length);
+  // Each uploaded photo repeated by its copy count, in order.
+  const printUrls = entries.flatMap((e) =>
+    e.status === "done" && e.url ? Array<string>(copiesOf(e.id)).fill(e.url) : []
+  );
+  const missing = Math.max(0, slots - printUrls.length);
+
+  function setCopiesFor(id: string, n: number) {
+    setCopies((prev) => ({ ...prev, [id]: Math.max(1, Math.min(maxSlots, n)) }));
+  }
   const fitsBundle = bundles.find((b) => b.photoSlots >= count && b.photoSlots > slots);
 
   // Keep the URL in sync so the page can be shared / refreshed on the chosen size.
@@ -124,7 +135,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
       unitPrice: bundle.price,
       compareAtPrice: bundle.compareAtPrice,
       imageUrl: bundle.sampleImageUrl,
-      uploadedImageUrls: uploadedUrls,
+      uploadedImageUrls: printUrls,
       customText,
     };
     addItem(item);
@@ -134,6 +145,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
     }
     setAdded(true);
     clear();
+    setCopies({});
     setPhotosLater(false);
   }
 
@@ -236,7 +248,9 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
           ) : (
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-label="Your photos">
               {entries.map((entry, i) => {
-                const extra = i >= slots;
+                const before = entries.slice(0, i).reduce((sum, e) => sum + copiesOf(e.id), 0);
+                const n = copiesOf(entry.id);
+                const extra = before + n > slots;
                 return (
                   <li key={entry.id} className="relative">
                     <div
@@ -281,6 +295,31 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                     >
                       ✕
                     </button>
+                    {slots > 1 && (
+                      <div className="mt-1 flex items-center justify-center rounded-full border border-stone-200 bg-white" role="group" aria-label={`Copies of photo ${i + 1}`}>
+                        <button
+                          type="button"
+                          onClick={() => setCopiesFor(entry.id, n - 1)}
+                          disabled={n <= 1}
+                          className="flex h-8 w-8 items-center justify-center text-lg font-bold text-brand disabled:text-stone-300"
+                          aria-label={`Fewer copies of photo ${i + 1}`}
+                        >
+                          −
+                        </button>
+                        <span className="min-w-[2.25rem] text-center text-xs font-bold text-stone-700" aria-live="polite">
+                          ×{n}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCopiesFor(entry.id, n + 1)}
+                          disabled={count >= maxSlots}
+                          className="flex h-8 w-8 items-center justify-center text-lg font-bold text-brand disabled:text-stone-300"
+                          aria-label={`More copies of photo ${i + 1}`}
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -315,6 +354,23 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         </div>
 
         {notice && <p className="mt-2 text-sm text-stone-600">{notice}</p>}
+
+        {entries.length > 0 && slots > 1 && count < slots && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-brand/5 p-3 text-sm text-stone-700">
+            <span>
+              Want the same photo more than once? Tap <strong>+</strong> under it.
+            </span>
+            {entries.length === 1 && (
+              <button
+                type="button"
+                onClick={() => setCopiesFor(entries[0].id, slots)}
+                className="rounded-full bg-brand px-4 py-1.5 font-semibold text-white"
+              >
+                Use this photo for all {slots}
+              </button>
+            )}
+          </div>
+        )}
 
         {overBy > 0 && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900" role="status">

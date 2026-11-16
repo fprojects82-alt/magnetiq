@@ -66,7 +66,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                     {customText?.names && <p className="text-sm text-stone-500">{customText.names} — {customText.eventDate}</p>}
                     {customText?.message && <p className="text-sm text-stone-500">&ldquo;{customText.message}&rdquo;</p>}
                     {item.size && <p className="text-sm text-stone-500">{item.size}</p>}
-                    <p className="text-sm text-stone-500">{images.length} photo{images.length === 1 ? "" : "s"} uploaded</p>
+                    <p className="text-sm text-stone-500">{images.length} print{images.length === 1 ? "" : "s"} from {new Set(images).size} photo{new Set(images).size === 1 ? "" : "s"}</p>
                     {customText?.photosLater && (
                       <p className="mt-1 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
                         Customer is sending remaining photos on WhatsApp
@@ -76,9 +76,16 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                   <span className="font-semibold text-brand">{formatEGP(item.unitPrice * item.quantity)}</span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-3">
-                  {images.map((url, idx) => (
-                    <a key={idx} href={url} target="_blank" rel="noreferrer" className="relative h-28 w-28 overflow-hidden rounded-lg border border-stone-200">
+                  {Array.from(
+                    images.reduce((m, url) => m.set(url, (m.get(url) ?? 0) + 1), new Map<string, number>())
+                  ).map(([url, copies], idx) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className="relative h-28 w-28 overflow-hidden rounded-lg border border-stone-200">
                       <img src={url} alt={`Uploaded photo ${idx + 1}`} className="absolute inset-0 h-full w-full object-cover" />
+                      {copies > 1 && (
+                        <span className="absolute bottom-1 right-1 rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">
+                          ×{copies}
+                        </span>
+                      )}
                     </a>
                   ))}
                 </div>
