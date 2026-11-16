@@ -1,28 +1,54 @@
-import { db } from "@/lib/db";
+import type { Metadata } from "next";
 import { BackButton } from "@/components/BackButton";
-import { ProductCard } from "@/components/ProductCard";
+import { CardRequestForm } from "@/components/CardRequestForm";
 
+// Render per request so the shared header (offers, account) is always current.
 export const dynamic = "force-dynamic";
 
-export default async function EventCardsPage() {
-  const cards = await db.product.findMany({
-    where: { active: true, type: "EVENT_CARD" },
-    orderBy: { sortOrder: "asc" },
-  });
+export const metadata: Metadata = {
+  title: "Event Cards with Photo Magnets",
+  description:
+    "Engagement, wedding, save the date and proposal cards, with a photo magnet or 3D sticker on each one. Send your design and get a quote on WhatsApp.",
+};
 
+export default function EventCardsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <BackButton />
-      <h1 className="text-3xl font-bold text-stone-800">Event Cards</h1>
-      <p className="mt-2 max-w-2xl text-stone-500">
-        Printed cards with an embedded custom-photo magnet insert — perfect for save-the-dates,
-        engagement announcements, proposals and wedding invitations. Upload your photo and add
-        your names &amp; date.
-      </p>
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {cards.map((product) => (
-          <ProductCard key={product.id} {...product} />
-        ))}
+      <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <p className="font-script text-2xl text-brand">Moments That Stick</p>
+          <h1 className="font-display text-4xl font-bold italic text-brand sm:text-5xl">Event cards</h1>
+          <p className="mt-3 text-stone-600">
+            We print cards for your engagement, wedding, save the date, proposal or any occasion, and can add a photo magnet or
+            3D sticker on each card. Your guests take the moment home and keep it on their fridge.
+          </p>
+          <video
+            src="/media/engagement-cards.mp4"
+            poster="/media/engagement-cards.webp"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="mx-auto mt-6 aspect-[9/16] max-h-[300px] rounded-3xl bg-stone-200 object-cover shadow-xl lg:mx-0 lg:max-h-[460px]"
+            aria-label="A stack of finished engagement cards, each holding a photo magnet"
+          />
+          <ol className="mt-6 space-y-3 text-sm text-stone-700">
+            <li className="flex gap-3">
+              <span className="step-num shrink-0">1</span> Tell us the occasion, how many cards, and whether you want magnets.
+            </li>
+            <li className="flex gap-3">
+              <span className="step-num shrink-0">2</span> Send your design or a demo you like.
+            </li>
+            <li className="flex gap-3">
+              <span className="step-num shrink-0">3</span> We reply on WhatsApp with the price and a preview before printing.
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <CardRequestForm />
+        </div>
       </div>
     </div>
   );

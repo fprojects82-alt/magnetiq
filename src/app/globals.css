@@ -4,27 +4,47 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background-color: #FBF3EC;
-  color: #2A2320;
+  background-color: #f6f1ea;
+  color: #2a2320;
 }
 
-.btn-primary {
-  @apply inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed;
+:focus-visible {
+  outline: 3px solid rgba(183, 32, 46, 0.45);
+  outline-offset: 2px;
 }
 
-.btn-outline {
-  @apply inline-flex items-center justify-center rounded-full border-2 border-brand px-6 py-3 font-semibold text-brand transition hover:bg-brand hover:text-white;
-}
+@layer components {
+  .btn-primary {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
 
-.input-field {
-  @apply w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand;
-}
+  .btn-outline {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 border-brand bg-white px-6 py-3 font-semibold text-brand transition hover:bg-brand hover:text-white active:scale-[0.98];
+  }
 
-.card-surface {
-  @apply rounded-2xl border border-stone-200 bg-white shadow-sm;
+  .input-field {
+    @apply w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30;
+  }
+
+  .card-surface {
+    @apply rounded-2xl border border-stone-200 bg-white shadow-sm;
+  }
+
+  .step-title {
+    @apply flex items-center gap-2 text-lg font-bold text-stone-800;
+  }
+
+  .step-num {
+    @apply flex h-7 w-7 items-center justify-center rounded-full bg-brand text-sm font-bold text-white;
+  }
+
+  .section-title {
+    @apply font-display text-3xl font-bold italic text-brand sm:text-4xl;
+  }
 }
 
 @keyframes marquee {
@@ -41,6 +61,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   .animate-marquee {
     animation: none;
   }

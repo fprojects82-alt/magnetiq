@@ -8,11 +8,23 @@ Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma and MongoDB
 ## Features
 
 **Storefront**
-- Small and large photo magnets, event cards (save-the-date, engagement, proposal, wedding)
-- Bundle packages and discount offers, managed from the admin panel
-- Photo upload with a live magnet-shaped preview
+- Three product lines from the price sheets, each sold singly or in bundles:
+  - **Pressed Magnets**: 5 x 5 cm rounded squares, 5 pressed layers. 1 for 50 EGP;
+    6 / 8 / 12 / 15 / 20 / 28 for 270–960 EGP
+  - **Flat Magnets**: 7 x 10 cm polaroid-style, 2 layers. 1 for 35 EGP;
+    6 / 8 / 12 / 15 / 20 / 28 for 200–560 EGP
+  - **3D Stickers**: 3 x 3 cm domed stickers (any size on request).
+    1 / 3 / 5 / 10 / 15 / 20 / 50 / 100 for 50–3,500 EGP
+- Event cards are a quote request form (`/event-cards`): occasion, number of cards,
+  design/demo uploads, magnets yes/no with type and count. Requests appear in
+  Admin → Card requests and the customer sends them to WhatsApp
+- Each product line has its own order page: `/shop/pressed`, `/shop/flat`, `/shop/stickers`
+- One-page bundle builder: pick a size, select all photos at once, order. Phone photos
+  (incl. large / HEIC) are resized to JPEG in the browser before upload
+- "I'll send my photos on WhatsApp" option for customers who'd rather not upload
 - Cart with coupon codes, guest checkout, order confirmation with confetti
 - Cash on Delivery or InstaPay, plus a pre-filled WhatsApp order handoff
+- Real product photos and the engagement-card video live in `public/media`
 
 **Customer accounts**
 - Sign up / log in, order history, and auto-filled checkout details
@@ -54,5 +66,12 @@ so local development needs no cloud services beyond the database.
 
 ## Notes
 
-- Prices are in EGP and are editable from the admin panel.
+- Prices are in EGP and are editable from the admin panel (Packages). A package's
+  "Print line" groups it with the other sizes of the same line on the order page.
+- The built-in catalog (`src/lib/catalogData.ts`) loads itself into the database on the
+  first request after deploy. Bump `CATALOG_VERSION` there to push new prices to a live site
+  (this overwrites admin price edits for those bundles once).
+- Re-running the seed upserts by slug and hides (never deletes) anything not in it,
+  so it is safe to run against a database with existing orders.
+- Optional: set `NEXT_PUBLIC_SITE_URL` (e.g. `https://magnetiq.eg`) for correct social share previews.
 - Change `ADMIN_PASSWORD` and `SESSION_SECRET` before going live.

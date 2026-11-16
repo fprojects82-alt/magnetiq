@@ -9,11 +9,12 @@ const config: Config = {
           DEFAULT: "#B7202E",
           dark: "#8F1621",
           light: "#E85C68",
-          cream: "#FBF3EC",
+          cream: "#F6F1EA",
         },
       },
       fontFamily: {
         script: ["var(--font-script)"],
+        display: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)"],
       },
     },

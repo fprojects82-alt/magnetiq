@@ -36,6 +36,8 @@ model Package {
   composition    String
   sampleImageUrl String
   photoSlots     Int      @default(1)
+  // "PRESSED" | "FLAT" | "STICKER" for print bundles; null for anything else (mixed gift sets etc.)
+  line           String?
   active         Boolean  @default(true)
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())
@@ -133,5 +135,27 @@ model Settings {
   whatsappNumber String
   instapayNumber String @default("")
   deliveryFee    Int
+  // Bumped by src/lib/catalogSync.ts after it loads a new built-in catalog.
+  // Optional so settings documents created before this field existed still load.
+  catalogVersion Int?
   updatedAt      DateTime @updatedAt
+}
+
+// Event card enquiries: priced per request, so they are not cart orders.
+// status: "NEW" | "CONTACTED" | "CONFIRMED" | "DONE" | "CANCELLED"
+model CardRequest {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  customerName  String
+  phone         String
+  cardType      String
+  cardCount     Int
+  withMagnets   Boolean  @default(false)
+  magnetType    String?
+  magnetCount   Int?
+  names         String?
+  eventDate     String?
+  notes         String?
+  demoImageUrls String   @default("[]")
+  status        String   @default("NEW")
+  createdAt     DateTime @default(now())
 }
