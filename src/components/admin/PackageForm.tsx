@@ -77,6 +77,7 @@ export function PackageForm({ pkg }: PackageFormProps) {
           <option value="PRESSED">Pressed Magnets (5 x 5 cm)</option>
           <option value="FLAT">Flat Magnets (7 x 10 cm)</option>
           <option value="STICKER">3D Stickers (3 x 3 cm)</option>
+          <option value="BOOKMARK">Magnetic Bookmarks</option>
         </select>
         <p className="mt-1 text-xs text-stone-400">Bundles in a print line are grouped together and shown as size options in the shop.</p>
       </div>

@@ -103,25 +103,32 @@ export default async function OrderConfirmationPage({ params }: { params: { orde
             </li>
             <li>
               <p className="mb-2 font-semibold text-stone-800">2. Upload the transfer screenshot:</p>
-              <PaymentProofUploader orderNumber={order.orderNumber} initialUrl={order.paymentProofUrl} />
+              <PaymentProofUploader
+                orderNumber={order.orderNumber}
+                initialUrl={order.paymentProofUrl}
+                fallbackHref={whatsappLink}
+              />
             </li>
-            <li>
-              <p className="mb-2 font-semibold text-stone-800">
-                3. Send your order on WhatsApp{anyPhotosLater ? " with the rest of your photos" : ""}:
-              </p>
-              <a href={whatsappLink} target="_blank" rel="noreferrer" className="btn-primary w-full bg-[#1f9e4f] hover:bg-[#178a42]">
-                <WhatsAppIcon className="h-5 w-5" /> Send order {order.orderNumber} on WhatsApp
-              </a>
-            </li>
+            {anyPhotosLater && (
+              <li>
+                <p className="mb-2 font-semibold text-stone-800">3. Send the rest of your photos on WhatsApp:</p>
+                <a href={whatsappLink} target="_blank" rel="noreferrer" className="btn-primary w-full bg-[#1f9e4f] hover:bg-[#178a42]">
+                  <WhatsAppIcon className="h-5 w-5" /> Send photos for {order.orderNumber}
+                </a>
+              </li>
+            )}
           </ol>
-          <p className="mt-4 text-xs text-stone-500">We start printing as soon as your payment is confirmed.</p>
+          <p className="mt-4 text-xs text-stone-500">
+            Your screenshot goes straight to our team. We check it and start printing as soon as your payment is confirmed.
+          </p>
         </section>
       ) : (
-        <div className="mt-6 flex flex-col items-center gap-3">
-          <a href={whatsappLink} target="_blank" rel="noreferrer" className="btn-primary bg-[#1f9e4f] hover:bg-[#178a42]">
-            <WhatsAppIcon className="h-5 w-5" /> Message us about this order
+        <p className="mt-6 text-sm text-stone-600">
+          Questions about your order?{" "}
+          <a href={whatsappLink} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
+            Message us on WhatsApp
           </a>
-        </div>
+        </p>
       )}
       <p className="mt-4 text-xs text-stone-500">
         Save this page or your order number. You can check your order status anytime at{" "}

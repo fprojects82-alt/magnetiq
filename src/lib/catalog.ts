@@ -2,7 +2,7 @@
 // Prices themselves live in the database (Package rows) so they stay editable
 // from the admin panel; this file only holds the copy and imagery for each line.
 
-export const PRINT_LINE_KEYS = ["PRESSED", "FLAT", "STICKER"] as const;
+export const PRINT_LINE_KEYS = ["PRESSED", "FLAT", "STICKER", "BOOKMARK"] as const;
 export type PrintLineKey = (typeof PRINT_LINE_KEYS)[number];
 
 export interface PrintLine {
@@ -92,6 +92,27 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
     ],
     priceSheet: "/media/price-sheet-stickers.webp",
   },
+  BOOKMARK: {
+    key: "BOOKMARK",
+    anchor: "bookmarks",
+    name: "Magnetic Bookmarks",
+    shortName: "Bookmark",
+    itemName: "Magnetic Bookmark",
+    tagline: "Folded magnetic bookmarks that clip onto the page and never fall out.",
+    note: "Send your photo, a quote or any design you love.",
+    size: "Folded magnetic bookmark",
+    sizeAr: "فاصل كتاب مغناطيسي",
+    layers: "Magnetic fold-over",
+    layersDetail: "Printed both sides · Magnets inside · Clips over the page",
+    layersAr: "فاصل كتاب مغناطيسي بتصميمك",
+    aspect: "2 / 3",
+    cover: "/media/bookmark-daisies.webp",
+    gallery: [
+      { src: "/media/bookmark-daisies.webp", alt: "Four colourful magnetic bookmarks clipped along the edge of a book page" },
+      { src: "/media/bookmark-quran.webp", alt: "A blue ornamental magnetic bookmark clipped onto a page of the Quran" },
+    ],
+    priceSheet: "/media/bookmark-daisies.webp",
+  },
 };
 
 export function getPrintLineByAnchor(anchor: string): PrintLine | null {
@@ -103,7 +124,7 @@ export function shopHref(line: PrintLine, size?: number): string {
 }
 
 export function getPrintLine(key: string | null | undefined): PrintLine | null {
-  if (key === "PRESSED" || key === "FLAT" || key === "STICKER") return PRINT_LINES[key];
+  if (key && (PRINT_LINE_KEYS as readonly string[]).includes(key)) return PRINT_LINES[key as PrintLineKey];
   return null;
 }
 

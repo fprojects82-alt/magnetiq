@@ -3,7 +3,7 @@
 // CATALOG_VERSION. Prices stay editable in the admin panel afterwards.
 
 /** Bump this whenever the data below changes so live databases pick it up. */
-export const CATALOG_VERSION = 4;
+export const CATALOG_VERSION = 5;
 
 /** The shop's WhatsApp number (digits only, with country code). */
 export const DEFAULT_WHATSAPP = "201204191235";
@@ -42,6 +42,10 @@ const STICKER_BUNDLES: [pieces: number, price: number][] = [
   [50, 2250],
   [100, 3500],
 ];
+
+// Magnetic Bookmarks: 45 EGP each.
+const BOOKMARK_PRICE = 45;
+const BOOKMARK_COUNTS = [1, 2, 3, 4, 5, 10];
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -120,7 +124,24 @@ function stickers(): CatalogPackage[] {
   });
 }
 
-export const CATALOG_PACKAGES: CatalogPackage[] = [...pressed(), ...flat(), ...stickers()];
+export function bookmarks(): CatalogPackage[] {
+  return BOOKMARK_COUNTS.map((pieces, i) => ({
+    slug: `bookmark-${pieces}`,
+    name: plural(pieces, "Magnetic Bookmark"),
+    description: `${plural(pieces, "magnetic bookmark")} printed with your photo or design. ${BOOKMARK_PRICE} EGP each.`,
+    price: BOOKMARK_PRICE * pieces,
+    compareAtPrice: null,
+    badge: null,
+    composition: `${pieces} x Magnetic bookmark · ${BOOKMARK_PRICE} EGP each`,
+    sampleImageUrl: "/media/bookmark-daisies.webp",
+    photoSlots: pieces,
+    line: "BOOKMARK",
+    active: true,
+    sortOrder: 300 + i + 1,
+  }));
+}
+
+export const CATALOG_PACKAGES: CatalogPackage[] = [...pressed(), ...flat(), ...stickers(), ...bookmarks()];
 
 export const CATALOG_OFFERS = [
   {

@@ -19,7 +19,7 @@ const packageSchema = z.object({
   composition: z.string().trim().min(1),
   sampleImageUrl: z.string().trim().min(1),
   photoSlots: z.coerce.number().int().min(1).max(200),
-  line: z.enum(["PRESSED", "FLAT", "STICKER"]).nullable(),
+  line: z.enum(["PRESSED", "FLAT", "STICKER", "BOOKMARK"]).nullable(),
   active: z.coerce.boolean(),
 });
 

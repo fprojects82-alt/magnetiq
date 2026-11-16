@@ -31,7 +31,7 @@ const FAQ = [
   },
   {
     q: "Can I order just one?",
-    a: "Yes. One pressed magnet is 50 EGP, one flat magnet is 35 EGP and one 3D sticker is 50 EGP. Bundles bring the price per photo down a lot.",
+    a: "Yes. One pressed magnet is 50 EGP, one flat magnet is 35 EGP, one 3D sticker is 50 EGP and one magnetic bookmark is 45 EGP. Bundles bring the price per photo down a lot.",
   },
   {
     q: "How do I send my photos?",
@@ -39,7 +39,7 @@ const FAQ = [
   },
   {
     q: "How do I pay?",
-    a: "All orders are paid in advance by InstaPay. After you order you get an order number: transfer the total, then upload the screenshot on the confirmation page or send it on WhatsApp with your order number.",
+    a: "All orders are paid in advance by InstaPay. After you order you get an order number: transfer the total and upload the screenshot on the confirmation page. It goes straight to our team. (Can't upload? You can send it on WhatsApp instead.)",
   },
   {
     q: "Do you deliver outside Cairo?",
@@ -138,7 +138,7 @@ export default async function HomePage() {
           <h2 id="styles-title" className="section-title text-center">Pick your style</h2>
           <p className="mt-2 text-center text-stone-600">Order a single piece, or save with a bundle.</p>
         </Reveal>
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {lines.map(({ line, bundles }, i) => {
             const each = fromEach(bundles);
             const popular = bundles.find((b) => b.badge === "Most popular") ?? bundles[0];

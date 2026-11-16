@@ -4,6 +4,7 @@ import {
   CATALOG_PACKAGES,
   CATALOG_VERSION,
   DEFAULT_WHATSAPP,
+  bookmarks,
   RETIRED_OFFER_PATTERN,
 } from "./catalogData";
 
@@ -64,13 +65,22 @@ async function run() {
   // v4: the shop's WhatsApp number.
   const whatsapp = current < 4 ? DEFAULT_WHATSAPP : settings?.whatsappNumber ?? DEFAULT_WHATSAPP;
 
+  // v5: magnetic bookmarks (added on their own so other prices edited in admin are kept).
+  if (current >= 3 && current < 5) {
+    for (const pkg of bookmarks()) {
+      await db.package.upsert({ where: { slug: pkg.slug }, update: pkg, create: pkg });
+    }
+  }
+  // Fill the InstaPay number from Vercel's INSTAPAY_NUMBER if it was never set in admin.
+  const instapay = settings?.instapayNumber || process.env.INSTAPAY_NUMBER || "";
+
   await db.settings.upsert({
     where: { id: "singleton" },
-    update: { catalogVersion: CATALOG_VERSION, whatsappNumber: whatsapp },
+    update: { catalogVersion: CATALOG_VERSION, whatsappNumber: whatsapp, instapayNumber: instapay },
     create: {
       id: "singleton",
       whatsappNumber: whatsapp,
-      instapayNumber: process.env.INSTAPAY_NUMBER || "",
+      instapayNumber: instapay,
       deliveryFee: Number(process.env.DELIVERY_FEE || 50),
       catalogVersion: CATALOG_VERSION,
     },
