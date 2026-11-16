@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin as requireAdminUser } from "@/lib/adminAuth";
 import { ORDER_STATUSES, OrderStatus } from "@/lib/types";
 
 async function requireAdmin() {
-  if (!(await getSession())) throw new Error("Unauthorized");
+  await requireAdminUser();
 }
 
 function refresh(orderId: string, orderNumber?: string) {

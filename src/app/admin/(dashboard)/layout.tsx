@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { logout } from "../actions";
 import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { getAdmin } from "@/lib/adminAuth";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
@@ -11,6 +13,7 @@ const NAV = [
   { href: "/admin/offers", label: "Offers" },
   { href: "/admin/coupons", label: "Coupons" },
   { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/admins", label: "Admins" },
 ];
 
 async function getBadges(): Promise<Record<string, number>> {
@@ -42,6 +45,8 @@ function Badge({ n }: { n?: number }) {
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // A removed admin's old cookie stops working immediately.
+  if (!(await getAdmin())) redirect("/admin/login");
   const badges = await getBadges();
   return (
     <div className="flex min-h-screen bg-brand-cream">
