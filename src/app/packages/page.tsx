@@ -2,106 +2,71 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PRINT_LINES, PRINT_LINE_KEYS, shopHref } from "@/lib/catalog";
 import { getLineBundles } from "@/lib/bundles";
+import { formatEGP } from "@/lib/currency";
 import { BackButton } from "@/components/BackButton";
-import { PriceList } from "@/components/PriceList";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Photo Magnets & 3D Stickers: Prices",
-  description: "Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers. Order one or save with a bundle, then upload your photos.",
+  title: "Order Photo Magnets & 3D Stickers",
+  description: "Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers. Pick one, choose how many, upload your photos.",
 };
 
+// A short "what would you like?" chooser. Each card opens that product's own order page.
 export default async function PackagesPage() {
   const lines = await Promise.all(
-    PRINT_LINE_KEYS.map(async (key) => ({ line: PRINT_LINES[key], bundles: await getLineBundles(key) }))
+    PRINT_LINE_KEYS.map(async (key) => ({ line: PRINT_LINES[key], bundles: await getLineBundles(key).catch(() => []) }))
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-4 sm:py-10">
       <BackButton />
-      <p className="font-script text-2xl text-brand">Moments That Stick</p>
-      <h1 className="text-3xl font-bold text-stone-800 sm:text-4xl">Choose your magnets &amp; stickers</h1>
-      <p className="mt-2 max-w-2xl text-stone-600">
-        Order a single piece or save with a bundle. The bigger the bundle, the less each photo costs. Tap a size to upload your photos.
-      </p>
+      <h1 className="font-display text-3xl font-bold italic text-brand sm:text-5xl">What would you like?</h1>
+      <p className="mt-1 text-stone-600">Pick a product to see its prices and upload your photos.</p>
 
-      {/* quick jump */}
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:max-w-3xl sm:grid-cols-3">
-        {lines.map(({ line, bundles }) => (
-          <a key={line.key} href={shopHref(line)} className="card-surface flex items-center gap-3 p-3 transition hover:border-brand">
-            <img src={line.cover} alt="" className="h-14 w-14 rounded-xl object-cover" />
-            <span>
-              <span className="block font-semibold text-stone-800">{line.name}</span>
-              {bundles.length > 0 && (
-                <span className="text-xs text-stone-500">
-                  from {Math.min(...bundles.map((b) => Math.round(b.price / b.photoSlots)))} EGP each
+      <ul className="mt-6 grid gap-4 md:grid-cols-3">
+        {lines.map(({ line, bundles }) => {
+          const single = bundles.find((b) => b.photoSlots === 1);
+          const each = bundles.length ? Math.min(...bundles.map((b) => Math.round(b.price / b.photoSlots))) : null;
+          return (
+            <li key={line.key}>
+              <Link
+                href={shopHref(line)}
+                className="card-surface group flex h-full overflow-hidden transition hover:border-brand hover:shadow-lg md:flex-col"
+              >
+                <img
+                  src={line.cover}
+                  alt=""
+                  className="w-32 shrink-0 object-cover sm:w-40 md:aspect-[4/3] md:w-full"
+                />
+                <span className="flex flex-1 flex-col p-4">
+                  <span className="font-display text-xl font-bold italic text-brand sm:text-2xl">{line.name}</span>
+                  <span className="text-sm font-semibold text-stone-700">{line.size}</span>
+                  <span className="mt-1 text-sm text-stone-500">
+                    {single && <>1 for {formatEGP(single.price)}</>}
+                    {single && each && " · "}
+                    {each && <>from {each} EGP each</>}
+                  </span>
+                  <span className="mt-auto pt-3 text-sm font-bold text-brand">
+                    Choose <span aria-hidden className="inline-block transition group-hover:translate-x-1">→</span>
+                  </span>
                 </span>
-              )}
-            </span>
-          </a>
-        ))}
-      </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
-      {lines.map(({ line, bundles }) => (
-        <section key={line.key} id={line.anchor} className="mt-14 scroll-mt-28" aria-labelledby={`${line.anchor}-title`}>
-          <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-            <div>
-              <h2 id={`${line.anchor}-title`} className="section-title">
-                {line.name}
-              </h2>
-              <p className="mt-2 text-stone-700">
-                <strong>Size:</strong> {line.size} · <span lang="ar" dir="rtl">{line.sizeAr}</span>
-              </p>
-              <p className="mt-1 text-stone-600">{line.tagline}</p>
-              {line.note && <p className="mt-1 font-semibold text-brand">{line.note}</p>}
-
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {line.gallery.map((img, i) => (
-                  <img
-                    key={img.src}
-                    src={img.src}
-                    alt={img.alt}
-                    loading="lazy"
-                    className={`w-full rounded-2xl object-cover shadow-md ${i === 0 ? "col-span-3 aspect-[4/3]" : "aspect-square"}`}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-brand/20 bg-white p-4 text-sm">
-                <p className="font-semibold text-stone-800">
-                  {line.layers}: <span className="font-normal text-stone-600">{line.layersDetail}</span>
-                </p>
-                <p className="mt-1 text-stone-600" lang="ar" dir="rtl">{line.layersAr}</p>
-                <a href={line.priceSheet} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-brand underline">
-                  View the {line.name.toLowerCase()} price sheet
-                </a>
-              </div>
-            </div>
-
-            <div>
-              {bundles.length === 0 ? (
-                <p className="text-stone-500">Coming back soon. Message us on WhatsApp to order.</p>
-              ) : (
-                <>
-                  <PriceList line={line} bundles={bundles} />
-                  <Link href={shopHref(line)} className="btn-primary mt-4 w-full">
-                    Order {line.name}
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-      ))}
-
-      <div className="mt-14 rounded-3xl bg-brand p-6 text-center text-white sm:p-10">
-        <p className="font-display text-2xl font-bold italic">Planning an engagement or wedding?</p>
-        <p className="mt-2 text-white/85">We print event cards and can add a photo magnet or 3D sticker on each one.</p>
-        <Link href="/event-cards" className="mt-4 inline-flex min-h-[48px] items-center rounded-full bg-white px-6 font-semibold text-brand">
-          Request event cards
-        </Link>
-      </div>
+      <Link
+        href="/event-cards"
+        className="mt-4 flex items-center justify-between gap-4 rounded-2xl bg-brand p-5 text-white transition hover:bg-brand-dark"
+      >
+        <span>
+          <span className="block font-display text-xl font-bold italic">Event cards</span>
+          <span className="text-sm text-white/85">Engagement, wedding & more, with a magnet on each card</span>
+        </span>
+        <span aria-hidden className="text-2xl">→</span>
+      </Link>
     </div>
   );
 }

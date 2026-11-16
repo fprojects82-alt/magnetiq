@@ -6,8 +6,9 @@ import { useCart } from "@/context/CartContext";
 import { formatEGP } from "@/lib/currency";
 import { BackButton } from "./BackButton";
 import { QuantityStepper } from "./QuantityStepper";
+import { MAX_SHIPPING, MIN_SHIPPING } from "@/lib/shipping";
 
-export function CartPageClient({ deliveryFee }: { deliveryFee: number }) {
+export function CartPageClient() {
   const { items, removeItem, updateQuantity, subtotal, coupon, applyCoupon, clearCoupon, discount, isHydrated } = useCart();
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -33,7 +34,7 @@ export function CartPageClient({ deliveryFee }: { deliveryFee: number }) {
     );
   }
 
-  const total = Math.max(0, subtotal - discount) + deliveryFee;
+  const total = Math.max(0, subtotal - discount);
 
   async function handleApplyCoupon(e: React.FormEvent) {
     e.preventDefault();
@@ -154,18 +155,21 @@ export function CartPageClient({ deliveryFee }: { deliveryFee: number }) {
             )}
             <div className="flex justify-between text-stone-600">
               <dt>Delivery</dt>
-              <dd>{deliveryFee > 0 ? formatEGP(deliveryFee) : "Free"}</dd>
+              <dd className="text-right">
+                {MIN_SHIPPING}–{MAX_SHIPPING} EGP
+                <span className="block text-xs text-stone-400">by zone, at checkout</span>
+              </dd>
             </div>
             <div className="flex justify-between border-t border-stone-100 pt-2 text-lg font-bold text-stone-800">
-              <dt>Total</dt>
+              <dt>Total before delivery</dt>
               <dd>{formatEGP(total)}</dd>
             </div>
           </dl>
 
           <Link href="/checkout" className="btn-primary mt-5 w-full">
-            Checkout · {formatEGP(total)}
+            Checkout
           </Link>
-          <p className="mt-3 text-center text-xs text-stone-500">Cash on delivery or InstaPay · No account needed</p>
+          <p className="mt-3 text-center text-xs text-stone-500">Pay by InstaPay · No account needed</p>
         </div>
       </div>
     </div>

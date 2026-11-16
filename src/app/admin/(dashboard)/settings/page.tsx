@@ -34,8 +34,11 @@ export default async function AdminSettingsPage() {
           <p className="mt-1 text-xs text-stone-400">Shown to customers who choose to pay via InstaPay.</p>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">Delivery fee (EGP)</label>
+          <label className="mb-1 block text-sm font-medium text-stone-700">Delivery fee (EGP, legacy)</label>
           <input name="deliveryFee" type="number" min={0} required defaultValue={settings.deliveryFee} className="input-field" />
+          <p className="mt-1 text-xs text-stone-400">
+            Not used for new orders: customers choose a delivery zone at checkout (prices in src/lib/shipping.ts).
+          </p>
         </div>
         <button type="submit" className="btn-primary">Save Settings</button>
       </form>

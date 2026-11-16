@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { formatEGP } from "@/lib/currency";
 import { createOrder } from "@/app/checkout/actions";
-import { PaymentMethod } from "@/lib/types";
+import { SHIPPING_ZONES, getZone } from "@/lib/shipping";
 import { BackButton } from "./BackButton";
 
 interface CheckoutPrefill {
@@ -15,19 +15,12 @@ interface CheckoutPrefill {
   city: string;
 }
 
-const GOVERNORATES = [
-  "Cairo", "Giza", "Alexandria", "Qalyubia", "Sharqia", "Dakahlia", "Gharbia", "Monufia", "Beheira",
-  "Kafr El Sheikh", "Damietta", "Port Said", "Ismailia", "Suez", "Faiyum", "Beni Suef", "Minya", "Asyut",
-  "Sohag", "Qena", "Luxor", "Aswan", "Red Sea", "Matrouh", "North Sinai", "South Sinai", "New Valley",
-];
 
 export function CheckoutPageClient({
-  deliveryFee,
   instapayNumber,
   whatsappNumber,
   prefill,
 }: {
-  deliveryFee: number;
   instapayNumber: string;
   whatsappNumber: string;
   prefill: CheckoutPrefill | null;
@@ -39,9 +32,9 @@ export function CheckoutPageClient({
     phone: prefill?.phone ?? "",
     address: prefill?.address ?? "",
     city: prefill?.city ?? "",
+    zone: "",
     notes: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState(false);
@@ -58,19 +51,24 @@ export function CheckoutPageClient({
 
   if (!isHydrated || isEmpty) return null;
 
+  const zone = getZone(form.zone);
+  const deliveryFee = zone?.price ?? 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
-  const instapayAvailable = Boolean(instapayNumber);
   const hasPhotosLater = items.some((i) => i.customText?.photosLater);
-  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
+    if (!zone) {
+      setError("Please choose your delivery zone.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      const result = await createOrder(form, items, coupon?.code || null, paymentMethod);
+      const result = await createOrder(form, items, coupon?.code || null);
       if (!result.success || !result.orderNumber) {
         setError(result.message || "Something went wrong. Please try again.");
         setSubmitting(false);
@@ -89,7 +87,7 @@ export function CheckoutPageClient({
     <div className="mx-auto max-w-5xl px-4 py-8">
       <BackButton />
       <h1 className="text-3xl font-bold text-stone-800">Checkout</h1>
-      <p className="mt-1 text-sm text-stone-500">No account needed. We&apos;ll call or WhatsApp you to confirm.</p>
+      <p className="mt-1 text-sm text-stone-500">No account needed. Payment is by InstaPay before we print.</p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <form onSubmit={handleSubmit} className="card-surface space-y-4 p-5 sm:p-6">
@@ -126,65 +124,59 @@ export function CheckoutPageClient({
               />
             </div>
             <div>
-              <label htmlFor="co-city" className="mb-1 block text-sm font-medium text-stone-700">City / governorate</label>
+              <label htmlFor="co-city" className="mb-1 block text-sm font-medium text-stone-700">City / area</label>
               <input
                 id="co-city"
                 required
-                list="governorates"
-                autoComplete="address-level1"
+                autoComplete="address-level2"
                 className="input-field"
+                placeholder="e.g. Smouha, Nasr City"
                 value={form.city}
                 onChange={set("city")}
               />
-              <datalist id="governorates">
-                {GOVERNORATES.map((g) => (
-                  <option key={g} value={g} />
-                ))}
-              </datalist>
             </div>
+          </div>
+          <div>
+            <label htmlFor="co-zone" className="mb-1 block text-sm font-medium text-stone-700">Delivery zone</label>
+            <select id="co-zone" required className="input-field" value={form.zone} onChange={set("zone")}>
+              <option value="" disabled>
+                Choose your zone…
+              </option>
+              {SHIPPING_ZONES.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.name} · {z.price} EGP
+                </option>
+              ))}
+            </select>
+            {zone && (
+              <p className="mt-1 text-xs text-stone-500">
+                Delivery {zone.price} EGP · usually arrives within {zone.eta}{" "}
+                <span lang="ar" dir="rtl">({zone.nameAr})</span>
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="co-notes" className="mb-1 block text-sm font-medium text-stone-700">Notes (optional)</label>
             <textarea id="co-notes" className="input-field" rows={2} placeholder="Landmark, best time to call…" value={form.notes} onChange={set("notes")} />
           </div>
 
-          <fieldset>
-            <legend className="step-title mb-3"><span className="step-num">2</span> Payment</legend>
-            <div className="space-y-2">
-              <label
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-sm transition ${
-                  paymentMethod === "COD" ? "border-brand bg-brand/5" : "border-stone-200 hover:border-stone-300"
-                }`}
-              >
-                <input type="radio" name="paymentMethod" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="h-5 w-5 accent-brand" />
-                <span>
-                  <span className="font-semibold text-stone-800">💵 Cash on delivery</span>
-                  <span className="block text-xs text-stone-500">Pay when your magnets arrive.</span>
-                </span>
-              </label>
-
-              {instapayAvailable && (
-                <label
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-sm transition ${
-                    paymentMethod === "INSTAPAY" ? "border-brand bg-brand/5" : "border-stone-200 hover:border-stone-300"
-                  }`}
-                >
-                  <input type="radio" name="paymentMethod" checked={paymentMethod === "INSTAPAY"} onChange={() => setPaymentMethod("INSTAPAY")} className="h-5 w-5 accent-brand" />
-                  <span>
-                    <span className="font-semibold text-stone-800">📲 InstaPay</span>
-                    <span className="block text-xs text-stone-500">Transfer, then send the receipt on WhatsApp.</span>
-                  </span>
-                </label>
-              )}
-            </div>
-
-            {paymentMethod === "INSTAPAY" && instapayAvailable && (
-              <div className="mt-3 space-y-2 rounded-xl bg-brand-cream p-4 text-sm text-stone-700">
-                <p>
-                  Transfer <strong>{formatEGP(total)}</strong> to our InstaPay:
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="rounded-lg bg-white px-3 py-2 font-semibold text-brand">{instapayNumber}</code>
+          <section aria-labelledby="pay-title">
+            <h2 id="pay-title" className="step-title mb-3"><span className="step-num">2</span> Payment: InstaPay</h2>
+            <div className="space-y-3 rounded-xl border-2 border-brand bg-brand/5 p-4 text-sm text-stone-700">
+              <p>
+                All orders are paid in advance by <strong>InstaPay</strong>. After you place your order you&apos;ll get your
+                <strong> order number</strong>. Then:
+              </p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>
+                  Transfer <strong>{zone ? formatEGP(total) : "the total"}</strong> to our InstaPay
+                  {instapayNumber ? ":" : "."}
+                </li>
+                <li>Upload the transfer screenshot on the next page, or send it on WhatsApp with your order number.</li>
+              </ol>
+              {instapayNumber && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <code className="rounded-lg bg-white px-3 py-2 text-base font-semibold text-brand">{instapayNumber}</code>
                   <button
                     type="button"
                     onClick={async () => {
@@ -193,24 +185,18 @@ export function CheckoutPageClient({
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       } catch {
-                        // clipboard unavailable (http / old browser); the number is still visible
+                        // clipboard unavailable; the number is still visible
                       }
                     }}
-                    className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium hover:border-brand hover:text-brand"
+                    className="min-h-[40px] rounded-full border border-stone-300 bg-white px-4 text-xs font-medium hover:border-brand hover:text-brand"
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? "Copied!" : "Copy number"}
                   </button>
                 </div>
-                <p className="text-xs text-stone-500">
-                  After placing your order, send the transfer screenshot with your order number to our{" "}
-                  <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
-                    WhatsApp
-                  </a>
-                  .
-                </p>
-              </div>
-            )}
-          </fieldset>
+              )}
+              <p className="text-xs text-stone-500">We start printing once your payment is confirmed.</p>
+            </div>
+          </section>
 
           {hasPhotosLater && (
             <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
@@ -221,7 +207,7 @@ export function CheckoutPageClient({
           <p role="alert" className="text-sm font-medium text-red-600 empty:hidden">{error}</p>
 
           <button type="submit" disabled={submitting} className="btn-primary w-full text-base">
-            {submitting ? "Placing your order…" : `Place order · ${formatEGP(total)}`}
+            {submitting ? "Placing your order…" : zone ? `Place order · ${formatEGP(total)}` : "Place order"}
           </button>
         </form>
 
@@ -251,8 +237,8 @@ export function CheckoutPageClient({
               </div>
             )}
             <div className="flex justify-between text-stone-600">
-              <dt>Delivery</dt>
-              <dd>{deliveryFee > 0 ? formatEGP(deliveryFee) : "Free"}</dd>
+              <dt>Delivery{zone ? ` (${zone.name.split(" /")[0].split(":")[0]})` : ""}</dt>
+              <dd>{zone ? formatEGP(deliveryFee) : "Choose zone"}</dd>
             </div>
             <div className="flex justify-between border-t border-stone-100 pt-2 text-lg font-bold text-stone-800">
               <dt>Total</dt>

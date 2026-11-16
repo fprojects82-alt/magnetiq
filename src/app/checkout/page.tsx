@@ -23,7 +23,6 @@ export default async function CheckoutPage() {
 
   return (
     <CheckoutPageClient
-      deliveryFee={settings.deliveryFee}
       instapayNumber={settings.instapayNumber}
       whatsappNumber={settings.whatsappNumber}
       prefill={prefill}

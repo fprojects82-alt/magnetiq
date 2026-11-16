@@ -39,11 +39,11 @@ const FAQ = [
   },
   {
     q: "How do I pay?",
-    a: "Cash on delivery, or InstaPay. With InstaPay, you send the transfer screenshot on WhatsApp after placing your order.",
+    a: "All orders are paid in advance by InstaPay. After you order you get an order number: transfer the total, then upload the screenshot on the confirmation page or send it on WhatsApp with your order number.",
   },
   {
     q: "Do you deliver outside Cairo?",
-    a: "Yes, we deliver all over Egypt. The delivery fee is shown in your cart before you order.",
+    a: "Yes, we deliver all over Egypt. Delivery costs 55–155 EGP depending on your zone (Alexandria 55, Cairo/Giza 90), and you choose your zone at checkout.",
   },
   {
     q: "Can I mix different photos in one bundle?",
@@ -82,11 +82,10 @@ export default async function HomePage() {
             </h1>
             <p className="mt-4 max-w-lg text-lg text-stone-600">
               Custom photo magnets and 3D stickers made from your phone pictures. Order one or a whole bundle, upload your
-              photos, and we deliver anywhere in Egypt. Pay cash on delivery.
+              photos, pay by InstaPay, and we deliver anywhere in Egypt.
             </p>
             <div className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row">
               {lines.map(({ line, bundles }, i) => {
-                const each = fromEach(bundles);
                 const popular = bundles.find((b) => b.badge === "Most popular") ?? bundles[0];
                 return (
                   <Link
@@ -95,14 +94,13 @@ export default async function HomePage() {
                     className={i === 0 ? "btn-primary text-base" : "btn-outline text-base"}
                   >
                     {line.name}
-                    {each && <span className="text-sm font-normal opacity-90">· from {each} EGP</span>}
                   </Link>
                 );
               })}
             </div>
-            <ul className="mt-6 grid max-w-lg grid-cols-2 gap-x-4 gap-y-2 text-sm text-stone-700">
+            <ul className="mt-6 grid max-w-lg grid-cols-1 gap-x-4 gap-y-1.5 text-sm text-stone-700 sm:grid-cols-2">
               <li>✓ Delivery all over Egypt</li>
-              <li>✓ Cash on delivery or InstaPay</li>
+              <li>✓ Easy payment by InstaPay</li>
               <li>✓ Upload straight from your phone</li>
               <li>✓ Every magnet a different photo</li>
             </ul>
@@ -167,7 +165,7 @@ export default async function HomePage() {
                         <Link
                           key={b.slug}
                           href={shopHref(line, b.photoSlots)}
-                          className="rounded-full border border-brand/30 px-3 py-1 text-sm font-medium text-stone-700 hover:border-brand hover:bg-brand hover:text-white"
+                          className="rounded-full border border-brand/30 px-3 py-2 text-sm font-medium text-stone-700 hover:border-brand hover:bg-brand hover:text-white"
                         >
                           {b.photoSlots} · {formatEGP(b.price)}
                         </Link>
@@ -205,7 +203,7 @@ export default async function HomePage() {
           {[
             { title: "Pick what you love", desc: "Pressed or flat magnets, or 3D stickers. One piece or a bundle: bigger bundles cost less per photo." },
             { title: "Upload your photos", desc: "Select them all at once from your phone, or send them later on WhatsApp." },
-            { title: "We print & deliver", desc: "Pay cash when your magnets arrive, anywhere in Egypt." },
+            { title: "Pay & we deliver", desc: "Pay by InstaPay, send the screenshot, and we print and deliver anywhere in Egypt." },
           ].map((s, i) => (
             <Reveal key={s.title} delay={i * 120}>
               <li className="card-surface flex h-full gap-4 p-6">

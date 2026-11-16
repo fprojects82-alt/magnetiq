@@ -3,7 +3,10 @@
 // CATALOG_VERSION. Prices stay editable in the admin panel afterwards.
 
 /** Bump this whenever the data below changes so live databases pick it up. */
-export const CATALOG_VERSION = 3;
+export const CATALOG_VERSION = 4;
+
+/** The shop's WhatsApp number (digits only, with country code). */
+export const DEFAULT_WHATSAPP = "201204191235";
 
 // Pressed Magnets (5 layers), 5 x 5 cm rounded square.
 const PRESSED_SINGLE = 50;

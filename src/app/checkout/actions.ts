@@ -4,13 +4,15 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCustomerSession } from "@/lib/auth";
 import { generateOrderNumber, findValidCoupon, isAllowedUploadUrl, normalizePhone } from "@/lib/orders";
-import { CartItem, PAYMENT_METHODS, PaymentMethod } from "@/lib/types";
+import { CartItem } from "@/lib/types";
+import { getZone } from "@/lib/shipping";
 
 const checkoutSchema = z.object({
   customerName: z.string().trim().min(2, "Please enter your full name.").max(100),
   phone: z.string().trim().min(1, "Please enter your phone number.").max(30),
   address: z.string().trim().min(5, "Please enter your full address (street, building, apartment).").max(300),
   city: z.string().trim().min(2, "Please enter your city / area.").max(80),
+  zone: z.string().min(1, "Please choose your delivery zone."),
   notes: z.string().trim().max(1000).optional(),
 });
 
@@ -47,11 +49,11 @@ export async function createOrder(
     phone: string;
     address: string;
     city: string;
+    zone: string;
     notes?: string;
   },
   items: CartItem[],
-  couponCode: string | null,
-  paymentMethod: PaymentMethod = "COD"
+  couponCode: string | null
 ): Promise<CheckoutResult> {
   const parsed = checkoutSchema.safeParse(formInput);
   if (!parsed.success) {
@@ -67,13 +69,16 @@ export async function createOrder(
   if (items.length > 50) {
     return { success: false, message: "Too many items in one order. Please split it or message us on WhatsApp." };
   }
-  if (!PAYMENT_METHODS.includes(paymentMethod)) {
-    return { success: false, message: "Invalid payment method." };
+  // Delivery is priced by zone (src/lib/shipping.ts), always on the server.
+  const zone = getZone(parsed.data.zone);
+  if (!zone) {
+    return { success: false, message: "Please choose your delivery zone." };
   }
+  // All orders are paid in advance by InstaPay.
+  const paymentMethod = "INSTAPAY";
 
   try {
-    const settings = await db.settings.findUnique({ where: { id: "singleton" } });
-    const deliveryFee = settings?.deliveryFee ?? 50;
+    const deliveryFee = zone.price;
 
     let subtotal = 0;
     const resolvedItems: {
@@ -167,6 +172,7 @@ export async function createOrder(
           phone,
           address: parsed.data.address,
           city: parsed.data.city,
+          deliveryZone: zone.id,
           notes: parsed.data.notes || null,
           subtotal,
           discount,

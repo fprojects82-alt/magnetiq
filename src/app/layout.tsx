@@ -7,6 +7,7 @@ import { getSettings } from "@/lib/settings";
 import { getCustomerSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ensureCatalog } from "@/lib/catalogSync";
+import { DEFAULT_WHATSAPP } from "@/lib/catalogData";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
     template: "%s | Magnetiq",
   },
   description:
-    "Turn your photos into fridge magnets and 3D stickers. Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers, singles or bundles. Upload from your phone, pay cash on delivery, delivered all over Egypt.",
+    "Turn your photos into fridge magnets and 3D stickers. Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers, singles or bundles. Upload from your phone, pay by InstaPay, delivered all over Egypt.",
   openGraph: {
     title: "Magnetiq: Moments That Stick",
     description: "Custom photo magnets and 3D stickers. Delivered all over Egypt.",
@@ -64,7 +65,7 @@ async function loadChromeData() {
     getCustomerSession().catch(() => null),
   ]);
   return {
-    whatsappNumber: settings?.whatsappNumber ?? process.env.WHATSAPP_NUMBER ?? "",
+    whatsappNumber: settings?.whatsappNumber ?? process.env.WHATSAPP_NUMBER ?? DEFAULT_WHATSAPP,
     offerItems: offers.map((o) => [o.badgeText, o.title].filter(Boolean).join("  ·  ")),
     customerName: customerSession?.name ?? null,
   };

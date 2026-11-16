@@ -160,7 +160,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
           <h2 id="step-size" className="step-title">
             <span className="step-num">1</span> How many photos?
           </h2>
-          <div role="radiogroup" aria-labelledby="step-size" className={`mt-3 grid gap-2 sm:gap-3 ${bundles.length > 6 ? "grid-cols-4" : "grid-cols-3"}`}>
+          <div role="radiogroup" aria-labelledby="step-size" className={`mt-3 grid grid-cols-3 gap-2 sm:gap-3 ${bundles.length > 6 ? "sm:grid-cols-4" : ""}`}>
             {bundles.map((b) => {
               const selected = b.slug === bundle.slug;
               return (

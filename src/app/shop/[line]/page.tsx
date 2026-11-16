@@ -46,10 +46,23 @@ export default async function ShopLinePage({
     options[0];
   const others = PRINT_LINE_KEYS.filter((k) => k !== line.key).map((k) => PRINT_LINES[k]);
 
+  const heading = (
+    <>
+      <h1 className="font-display text-3xl font-bold italic text-brand sm:text-5xl">{line.name}</h1>
+      <p className="mt-1 text-stone-700 sm:mt-2">
+        <strong>{line.size}</strong> · {line.layers}
+      </p>
+      <p className="mt-1 text-sm text-stone-600 sm:text-base">{line.tagline}</p>
+      {line.note && <p className="mt-1 text-sm font-semibold text-brand">{line.note}</p>}
+    </>
+  );
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10">
+    <div className="mx-auto max-w-6xl px-4 py-4 sm:py-10">
       <BackButton />
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr] lg:gap-12">
+      {/* On phones the name and price come first; the photos follow, smaller. */}
+      <div className="mb-4 lg:hidden">{heading}</div>
+      <div className="grid gap-5 lg:grid-cols-[1fr_1.15fr] lg:gap-12">
         <div className="lg:sticky lg:top-24 lg:self-start">
           <ProductGallery images={line.gallery} />
           <dl className="mt-4 hidden grid-cols-2 gap-3 text-sm lg:grid">
@@ -69,19 +82,14 @@ export default async function ShopLinePage({
         </div>
 
         <div>
-          <h1 className="font-display text-4xl font-bold italic text-brand sm:text-5xl">{line.name}</h1>
-          <p className="mt-2 text-stone-700">
-            <strong>{line.size}</strong> · {line.layers}
-          </p>
-          <p className="mt-1 text-stone-600">{line.tagline}</p>
-          {line.note && <p className="mt-1 text-sm font-semibold text-brand">{line.note}</p>}
-          <ul className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-stone-700">
-            <li className="rounded-full bg-white px-3 py-1.5 shadow-sm">🚚 Delivery all over Egypt</li>
-            <li className="rounded-full bg-white px-3 py-1.5 shadow-sm">💵 Cash on delivery</li>
-            <li className="rounded-full bg-white px-3 py-1.5 shadow-sm">📱 Upload from your phone</li>
+          <div className="hidden lg:block">{heading}</div>
+          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 text-xs font-medium text-stone-700 lg:mx-0 lg:mt-3 lg:flex-wrap lg:px-0">
+            <li className="shrink-0 rounded-full bg-white px-3 py-1.5 shadow-sm">🚚 Delivery all over Egypt</li>
+            <li className="shrink-0 rounded-full bg-white px-3 py-1.5 shadow-sm">📲 Pay by InstaPay</li>
+            <li className="shrink-0 rounded-full bg-white px-3 py-1.5 shadow-sm">📱 Upload from your phone</li>
           </ul>
 
-          <div className="mt-8">
+          <div className="mt-6 lg:mt-8">
             {initial ? (
               <BundleBuilder bundles={options} initialSlug={initial.slug} lineKey={line.key} />
             ) : (
