@@ -144,13 +144,13 @@ export function CheckoutPageClient({
               </option>
               {SHIPPING_ZONES.map((z) => (
                 <option key={z.id} value={z.id}>
-                  {z.name} · {z.price} EGP
+                  {z.name}
                 </option>
               ))}
             </select>
             {zone && (
               <p className="mt-1 text-xs text-stone-500">
-                Delivery {zone.price} EGP · usually arrives within {zone.eta}{" "}
+                Usually arrives within {zone.eta}{" "}
                 <span lang="ar" dir="rtl">({zone.nameAr})</span>
               </p>
             )}
