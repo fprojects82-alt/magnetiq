@@ -131,6 +131,7 @@ export function getPrintLine(key: string | null | undefined): PrintLine | null {
 export const SOCIAL_LINKS = {
   instagram: "https://www.instagram.com/magnetiq.eg",
   tiktok: "https://www.tiktok.com/@magnetiq.eg",
+  facebook: "https://www.facebook.com/share/1E6DmXxdKa/",
   handle: "@magnetiq.eg",
 };
 

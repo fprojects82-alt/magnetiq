@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { formatEGP } from "@/lib/currency";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { PaidToggle } from "@/components/admin/PaidToggle";
+import { DeleteOrderButton } from "@/components/admin/OrderCleanup";
 import { EventCardText } from "@/lib/types";
 import { isAllowedUploadUrl } from "@/lib/orders";
 import { getZone } from "@/lib/shipping";
@@ -28,6 +29,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
         <h1 className="text-2xl font-bold text-stone-800">Order {order.orderNumber}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <PaidToggle orderId={order.id} paid={Boolean(order.paidAt)} />
+          <DeleteOrderButton orderId={order.id} orderNumber={order.orderNumber} />
           <OrderStatusSelect orderId={order.id} status={order.status} />
         </div>
       </div>

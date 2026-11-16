@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     images: [{ url: "/media/og-image.jpg", width: 1200, height: 630, alt: "Magnetiq pressed photo magnets" }],
     type: "website",
   },
-  icons: { icon: "/logo.png", apple: "/logo.png" },
+  icons: { icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }], apple: "/apple-icon.png" },
 };
 
 export const viewport: Viewport = {

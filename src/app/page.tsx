@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { PRINT_LINES, PRINT_LINE_KEYS, SOCIAL_LINKS, shopHref } from "@/lib/catalog";
 import { getLineBundles } from "@/lib/bundles";
 import { formatEGP } from "@/lib/currency";
 import { getSettings } from "@/lib/settings";
-import { OfferBanner } from "@/components/OfferBanner";
+import { ReviewsSection } from "@/components/ReviewsSection";
 import { Parallax, Reveal } from "@/components/ScrollFX";
-import { InstagramIcon, TikTokIcon } from "@/components/Footer";
+import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/Footer";
 import { WhatsAppIcon } from "@/components/WhatsAppButton";
 
 export const dynamic = "force-dynamic";
@@ -52,8 +51,7 @@ const FAQ = [
 ];
 
 export default async function HomePage() {
-  const [offers, lines, settings] = await Promise.all([
-    db.offer.findMany({ where: { active: true } }).catch(() => []),
+  const [lines, settings] = await Promise.all([
     Promise.all(
       PRINT_LINE_KEYS.map(async (key) => ({
         line: PRINT_LINES[key],
@@ -184,15 +182,40 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {offers.length > 0 && (
-        <section className="mx-auto max-w-6xl space-y-3 px-4 py-4">
-          {offers.map((offer, i) => (
-            <Reveal key={offer.id} delay={i * 120}>
-              <OfferBanner title={offer.title} description={offer.description} badgeText={offer.badgeText} />
+      {/* EVENT CARDS */}
+      <section className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="cards-title">
+          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
+            <Reveal>
+              <video
+                src="/media/engagement-cards.mp4"
+                poster="/media/engagement-cards.webp"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="mx-auto aspect-[9/16] max-h-[520px] rounded-3xl object-cover shadow-xl"
+                aria-label="Engagement cards with photo magnets stacked and ready for delivery"
+              />
             </Reveal>
-          ))}
+            <div>
+              <Reveal>
+                <h2 id="cards-title" className="section-title">Event cards with a magnet</h2>
+                <p className="mt-2 text-stone-600">
+                  Engagement, wedding, save the date, proposal or birthday: we print your cards and can add a photo magnet or 3D
+                  sticker on each one, so your guests keep the moment on their fridge.
+                </p>
+                <ul className="mt-4 space-y-2 text-stone-700">
+                  <li>✓ Send us your design or an example you like</li>
+                  <li>✓ Choose how many cards, with or without magnets</li>
+                  <li>✓ We reply on WhatsApp with the price and a preview</li>
+                </ul>
+                <Link href="/event-cards" className="btn-primary mt-6">
+                  Request event cards
+                </Link>
+              </Reveal>
+            </div>
+          </div>
         </section>
-      )}
 
       {/* HOW IT WORKS */}
       <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="how-title">
@@ -236,6 +259,9 @@ export default async function HomePage() {
             <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="btn-outline">
               <InstagramIcon /> More on Instagram
             </a>
+            <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" className="btn-outline">
+              <FacebookIcon /> Follow on Facebook
+            </a>
             <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noreferrer" className="btn-outline">
               <TikTokIcon /> Watch on TikTok
             </a>
@@ -243,40 +269,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* EVENT CARDS */}
-      <section className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="cards-title">
-          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
-            <Reveal>
-              <video
-                src="/media/engagement-cards.mp4"
-                poster="/media/engagement-cards.webp"
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="mx-auto aspect-[9/16] max-h-[520px] rounded-3xl object-cover shadow-xl"
-                aria-label="Engagement cards with photo magnets stacked and ready for delivery"
-              />
-            </Reveal>
-            <div>
-              <Reveal>
-                <h2 id="cards-title" className="section-title">Event cards with a magnet</h2>
-                <p className="mt-2 text-stone-600">
-                  Engagement, wedding, save the date, proposal or birthday: we print your cards and can add a photo magnet or 3D
-                  sticker on each one, so your guests keep the moment on their fridge.
-                </p>
-                <ul className="mt-4 space-y-2 text-stone-700">
-                  <li>✓ Send us your design or an example you like</li>
-                  <li>✓ Choose how many cards, with or without magnets</li>
-                  <li>✓ We reply on WhatsApp with the price and a preview</li>
-                </ul>
-                <Link href="/event-cards" className="btn-primary mt-6">
-                  Request event cards
-                </Link>
-              </Reveal>
-            </div>
-          </div>
-        </section>
+      <ReviewsSection />
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-12" aria-labelledby="faq-title">

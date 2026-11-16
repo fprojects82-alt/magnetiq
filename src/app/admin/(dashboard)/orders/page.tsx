@@ -4,6 +4,7 @@ import { formatEGP } from "@/lib/currency";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS } from "@/lib/types";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { AutoRefresh } from "@/components/admin/AutoRefresh";
+import { DeleteOldOrders } from "@/components/admin/OrderCleanup";
 
 const PAYMENT_FILTERS = [
   { key: "check", label: "Screenshot to check" },
@@ -31,7 +32,10 @@ export default async function AdminOrdersPage({
   return (
     <div>
       <AutoRefresh seconds={60} />
-      <h1 className="text-2xl font-bold text-stone-800">Orders</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-2xl font-bold text-stone-800">Orders</h1>
+        <DeleteOldOrders />
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Filter by payment">
         {PAYMENT_FILTERS.map((f) => (

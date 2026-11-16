@@ -38,3 +38,58 @@ export async function setOrderPaid(orderId: string, paid: boolean) {
   });
   refresh(orderId, order.orderNumber);
 }
+
+/** Free database space: delete photos stored in MongoDB for these orders. */
+async function deleteStoredUploads(urls: string[]) {
+  const ids = urls
+    .map((u) => /^\/api\/uploads\/([a-f0-9]{24})$/i.exec(u)?.[1])
+    .filter((id): id is string => Boolean(id));
+  if (ids.length) await db.upload.deleteMany({ where: { id: { in: ids } } });
+}
+
+async function deleteOrders(orderIds: string[]) {
+  if (orderIds.length === 0) return 0;
+  const orders = await db.order.findMany({
+    where: { id: { in: orderIds } },
+    select: { id: true, paymentProofUrl: true, items: { select: { uploadedImageUrls: true } } },
+  });
+  const urls: string[] = [];
+  for (const o of orders) {
+    if (o.paymentProofUrl) urls.push(o.paymentProofUrl);
+    for (const item of o.items) {
+      try {
+        const list = JSON.parse(item.uploadedImageUrls);
+        if (Array.isArray(list)) urls.push(...list.filter((u): u is string => typeof u === "string"));
+      } catch {
+        // ignore malformed data
+      }
+    }
+  }
+  const ids = orders.map((o) => o.id);
+  await db.orderItem.deleteMany({ where: { orderId: { in: ids } } });
+  await db.order.deleteMany({ where: { id: { in: ids } } });
+  await deleteStoredUploads(Array.from(new Set(urls)));
+  return ids.length;
+}
+
+export async function deleteOrder(orderId: string) {
+  await requireAdmin();
+  await deleteOrders([orderId]);
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+}
+
+/** Bulk clean-up of finished orders (delivered or cancelled) older than N days. */
+export async function deleteOldOrders(days: number): Promise<{ deleted: number }> {
+  await requireAdmin();
+  const safeDays = [30, 90, 180, 365].includes(days) ? days : 90;
+  const cutoff = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000);
+  const old = await db.order.findMany({
+    where: { createdAt: { lt: cutoff }, status: { in: ["DELIVERED", "CANCELLED"] } },
+    select: { id: true },
+  });
+  const deleted = await deleteOrders(old.map((o) => o.id));
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  return { deleted };
+}

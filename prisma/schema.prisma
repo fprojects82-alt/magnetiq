@@ -175,3 +175,16 @@ model Upload {
   size        Int
   createdAt   DateTime @default(now())
 }
+
+// Customer reviews. Only orders with a confirmed payment can leave one (one per
+// order). Shown on the home page unless an admin hides it.
+model Review {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String   @unique
+  name        String
+  rating      Int
+  text        String
+  photoUrl    String?
+  visible     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}

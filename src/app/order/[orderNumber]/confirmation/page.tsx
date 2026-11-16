@@ -11,6 +11,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppButton";
 import { CopyButton, PaymentProofUploader } from "@/components/PaymentProof";
 import { getZone } from "@/lib/shipping";
 import { OrderStatusTracker } from "@/components/OrderStatusTracker";
+import { ReviewForm } from "@/components/ReviewForm";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,10 @@ export default async function OrderConfirmationPage({ params }: { params: { orde
   });
   if (!order) notFound();
 
-  const settings = await getSettings();
+  const [settings, review] = await Promise.all([
+    getSettings(),
+    db.review.findUnique({ where: { orderNumber: order.orderNumber }, select: { id: true } }).catch(() => null),
+  ]);
   const items = order.items.map((i) => {
     const photos = parseJSON<string[]>(i.uploadedImageUrls, []);
     const custom = parseJSON<EventCardText | null>(i.customText, null);
@@ -130,6 +134,16 @@ export default async function OrderConfirmationPage({ params }: { params: { orde
           </a>
         </p>
       )}
+      {order.paidAt && (
+        <div className="mt-6">
+          {review ? (
+            <div className="rounded-2xl bg-white p-4 text-sm text-stone-600 shadow-sm">✓ Thanks for reviewing this order!</div>
+          ) : (
+            <ReviewForm orderNumber={order.orderNumber} defaultName={order.customerName.split(" ")[0]} />
+          )}
+        </div>
+      )}
+
       <p className="mt-4 text-xs text-stone-500">
         Save this page or your order number. You can check your order status anytime at{" "}
         <Link href="/track" className="font-semibold text-brand underline">Track order</Link>.

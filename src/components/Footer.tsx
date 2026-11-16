@@ -20,13 +20,20 @@ export function TikTokIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
+export function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M13.5 21v-7.5h2.5l.4-3h-2.9V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H8v3h2.5V21h3z" />
+    </svg>
+  );
+}
+
 export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
   return (
     <footer className="mt-12 bg-brand-dark text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
         <div>
-          <img src="/logo.png" alt="" className="h-16 w-16 rounded-2xl bg-white p-1" />
-          <p className="mt-3 font-script text-2xl">Moments That Stick</p>
+          <img src="/logo-white.png" alt="Magnetiq — Moments That Stick" className="h-16 w-auto" />
           <p className="mt-1 text-sm text-white/80">
             Custom photo magnets, 3D stickers and event cards, delivered all over Egypt.
           </p>
@@ -56,6 +63,11 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
             <li>
               <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline">
                 <InstagramIcon /> Instagram {SOCIAL_LINKS.handle}
+              </a>
+            </li>
+            <li>
+              <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline">
+                <FacebookIcon /> Facebook
               </a>
             </li>
             <li>
