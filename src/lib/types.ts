@@ -11,8 +11,8 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
-  MAGNET_SMALL: "Small Magnet",
-  MAGNET_LARGE: "Large Magnet",
+  MAGNET_SMALL: "Pressed Magnet",
+  MAGNET_LARGE: "Flat Print",
   EVENT_CARD: "Event Card",
 };
 
@@ -36,6 +36,8 @@ export interface EventCardText {
   names?: string;
   eventDate?: string;
   message?: string;
+  /** Customer chose to send (some of) their photos on WhatsApp after ordering. */
+  photosLater?: boolean;
 }
 
 export interface CartItem {

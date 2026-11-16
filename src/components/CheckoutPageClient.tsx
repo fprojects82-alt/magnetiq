@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { formatEGP } from "@/lib/currency";
@@ -14,6 +14,12 @@ interface CheckoutPrefill {
   address: string;
   city: string;
 }
+
+const GOVERNORATES = [
+  "Cairo", "Giza", "Alexandria", "Qalyubia", "Sharqia", "Dakahlia", "Gharbia", "Monufia", "Beheira",
+  "Kafr El Sheikh", "Damietta", "Port Said", "Ismailia", "Suez", "Faiyum", "Beni Suef", "Minya", "Asyut",
+  "Sohag", "Qena", "Luxor", "Aswan", "Red Sea", "Matrouh", "North Sinai", "South Sinai", "New Valley",
+];
 
 export function CheckoutPageClient({
   deliveryFee,
@@ -41,17 +47,26 @@ export function CheckoutPageClient({
   const [placed, setPlaced] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // `placed` keeps this guard from bouncing to /cart after a successful
-  // order empties the cart while we navigate to the confirmation page.
-  if (isHydrated && items.length === 0 && !placed) {
-    router.replace("/cart");
-    return null;
-  }
+  const isEmpty = isHydrated && items.length === 0 && !placed;
+
+  // Redirect in an effect, not during render (calling router.replace while
+  // rendering triggers React "update during render" warnings and double navigations).
+  // `placed` stops this firing after a successful order empties the cart.
+  useEffect(() => {
+    if (isEmpty) router.replace("/cart");
+  }, [isEmpty, router]);
+
+  if (!isHydrated || isEmpty) return null;
 
   const total = Math.max(0, subtotal - discount) + deliveryFee;
+  const instapayAvailable = Boolean(instapayNumber);
+  const hasPhotosLater = items.some((i) => i.customText?.photosLater);
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -65,181 +80,186 @@ export function CheckoutPageClient({
       clearCart();
       router.push(`/order/${result.orderNumber}/confirmation`);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Connection problem. Please check your internet and try again.");
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <BackButton />
       <h1 className="text-3xl font-bold text-stone-800">Checkout</h1>
+      <p className="mt-1 text-sm text-stone-500">No account needed. We&apos;ll call or WhatsApp you to confirm.</p>
 
-      <div className="mt-8 grid gap-8 sm:grid-cols-2">
-        <form onSubmit={handleSubmit} className="card-surface space-y-4 p-6">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+        <form onSubmit={handleSubmit} className="card-surface space-y-4 p-5 sm:p-6">
+          <h2 className="step-title"><span className="step-num">1</span> Delivery details</h2>
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">Full name</label>
-            <input
-              required
-              className="input-field"
-              value={form.customerName}
-              onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-            />
+            <label htmlFor="co-name" className="mb-1 block text-sm font-medium text-stone-700">Full name</label>
+            <input id="co-name" required autoComplete="name" className="input-field" value={form.customerName} onChange={set("customerName")} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">Phone number</label>
+            <label htmlFor="co-phone" className="mb-1 block text-sm font-medium text-stone-700">Mobile number (WhatsApp preferred)</label>
             <input
+              id="co-phone"
               required
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               className="input-field"
               placeholder="01xxxxxxxxx"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={set("phone")}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">Address</label>
-            <input
-              required
-              className="input-field"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
+          <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
+            <div>
+              <label htmlFor="co-address" className="mb-1 block text-sm font-medium text-stone-700">Address</label>
+              <input
+                id="co-address"
+                required
+                autoComplete="street-address"
+                className="input-field"
+                placeholder="Street, building, floor, apartment"
+                value={form.address}
+                onChange={set("address")}
+              />
+            </div>
+            <div>
+              <label htmlFor="co-city" className="mb-1 block text-sm font-medium text-stone-700">City / governorate</label>
+              <input
+                id="co-city"
+                required
+                list="governorates"
+                autoComplete="address-level1"
+                className="input-field"
+                value={form.city}
+                onChange={set("city")}
+              />
+              <datalist id="governorates">
+                {GOVERNORATES.map((g) => (
+                  <option key={g} value={g} />
+                ))}
+              </datalist>
+            </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">City</label>
-            <input
-              required
-              className="input-field"
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">Notes (optional)</label>
-            <textarea
-              className="input-field"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            />
+            <label htmlFor="co-notes" className="mb-1 block text-sm font-medium text-stone-700">Notes (optional)</label>
+            <textarea id="co-notes" className="input-field" rows={2} placeholder="Landmark, best time to call…" value={form.notes} onChange={set("notes")} />
           </div>
 
-          <div>
-            <p className="mb-2 text-sm font-medium text-stone-700">Payment method</p>
+          <fieldset>
+            <legend className="step-title mb-3"><span className="step-num">2</span> Payment</legend>
             <div className="space-y-2">
               <label
-                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-sm transition ${
                   paymentMethod === "COD" ? "border-brand bg-brand/5" : "border-stone-200 hover:border-stone-300"
                 }`}
               >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  checked={paymentMethod === "COD"}
-                  onChange={() => setPaymentMethod("COD")}
-                  className="accent-brand"
-                />
+                <input type="radio" name="paymentMethod" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="h-5 w-5 accent-brand" />
                 <span>
-                  <span className="font-semibold text-stone-800">Cash on Delivery</span>
-                  <span className="block text-xs text-stone-500">Pay in cash when your order arrives.</span>
+                  <span className="font-semibold text-stone-800">💵 Cash on delivery</span>
+                  <span className="block text-xs text-stone-500">Pay when your magnets arrive.</span>
                 </span>
               </label>
 
-              <label
-                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
-                  paymentMethod === "INSTAPAY" ? "border-brand bg-brand/5" : "border-stone-200 hover:border-stone-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  checked={paymentMethod === "INSTAPAY"}
-                  onChange={() => setPaymentMethod("INSTAPAY")}
-                  className="accent-brand"
-                />
-                <span>
-                  <span className="font-semibold text-stone-800">InstaPay</span>
-                  <span className="block text-xs text-stone-500">
-                    Transfer via InstaPay, then send the receipt on WhatsApp.
+              {instapayAvailable && (
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-sm transition ${
+                    paymentMethod === "INSTAPAY" ? "border-brand bg-brand/5" : "border-stone-200 hover:border-stone-300"
+                  }`}
+                >
+                  <input type="radio" name="paymentMethod" checked={paymentMethod === "INSTAPAY"} onChange={() => setPaymentMethod("INSTAPAY")} className="h-5 w-5 accent-brand" />
+                  <span>
+                    <span className="font-semibold text-stone-800">📲 InstaPay</span>
+                    <span className="block text-xs text-stone-500">Transfer, then send the receipt on WhatsApp.</span>
                   </span>
-                </span>
-              </label>
+                </label>
+              )}
             </div>
 
-            {paymentMethod === "INSTAPAY" && (
-              <div className="mt-3 space-y-2 rounded-lg bg-brand-cream p-4 text-sm text-stone-700">
+            {paymentMethod === "INSTAPAY" && instapayAvailable && (
+              <div className="mt-3 space-y-2 rounded-xl bg-brand-cream p-4 text-sm text-stone-700">
                 <p>
-                  Transfer <strong>{formatEGP(total)}</strong> to our InstaPay number:
+                  Transfer <strong>{formatEGP(total)}</strong> to our InstaPay:
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="rounded bg-white px-3 py-1.5 font-semibold text-brand">{instapayNumber}</code>
+                  <code className="rounded-lg bg-white px-3 py-2 font-semibold text-brand">{instapayNumber}</code>
                   <button
                     type="button"
                     onClick={async () => {
-                      await navigator.clipboard.writeText(instapayNumber);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                      try {
+                        await navigator.clipboard.writeText(instapayNumber);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {
+                        // clipboard unavailable (http / old browser); the number is still visible
+                      }
                     }}
-                    className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium hover:border-brand hover:text-brand"
+                    className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium hover:border-brand hover:text-brand"
                   >
                     {copied ? "Copied!" : "Copy"}
                   </button>
                 </div>
                 <p className="text-xs text-stone-500">
                   After placing your order, send the transfer screenshot with your order number to our{" "}
-                  <a
-                    href={`https://wa.me/${whatsappNumber}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold text-brand underline"
-                  >
+                  <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
                     WhatsApp
                   </a>
                   .
                 </p>
               </div>
             )}
-          </div>
+          </fieldset>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {hasPhotosLater && (
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              📸 You chose to send some photos on WhatsApp. After ordering, tap &quot;Send order on WhatsApp&quot; and attach them.
+            </p>
+          )}
 
-          <button type="submit" disabled={submitting} className="btn-primary w-full">
-            {submitting ? "Placing order..." : `Place Order — ${formatEGP(total)}`}
+          <p role="alert" className="text-sm font-medium text-red-600 empty:hidden">{error}</p>
+
+          <button type="submit" disabled={submitting} className="btn-primary w-full text-base">
+            {submitting ? "Placing your order…" : `Place order · ${formatEGP(total)}`}
           </button>
         </form>
 
-        <div className="card-surface p-6">
-          <h2 className="font-semibold text-stone-800">Order Summary</h2>
-          <div className="mt-4 space-y-2 divide-y divide-stone-100">
+        <aside className="card-surface h-fit p-5 lg:sticky lg:top-24" aria-labelledby="summary-title">
+          <h2 id="summary-title" className="font-semibold text-stone-800">Order summary</h2>
+          <ul className="mt-3 divide-y divide-stone-100">
             {items.map((item) => (
-              <div key={item.key} className="flex justify-between py-2 text-sm">
-                <span className="text-stone-600">{item.name} x{item.quantity}</span>
+              <li key={item.key} className="flex items-center gap-3 py-2 text-sm">
+                <img src={item.uploadedImageUrls[0] || item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                <span className="flex-1 text-stone-600">
+                  {item.name}
+                  {item.quantity > 1 && ` × ${item.quantity}`}
+                </span>
                 <span className="font-medium">{formatEGP(item.unitPrice * item.quantity)}</span>
-              </div>
+              </li>
             ))}
-          </div>
-          <div className="mt-4 space-y-2 border-t border-stone-100 pt-4 text-sm">
+          </ul>
+          <dl className="mt-3 space-y-2 border-t border-stone-100 pt-3 text-sm">
             <div className="flex justify-between text-stone-600">
-              <span>Subtotal</span>
-              <span>{formatEGP(subtotal)}</span>
+              <dt>Subtotal</dt>
+              <dd>{formatEGP(subtotal)}</dd>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-700">
-                <span>Discount</span>
-                <span>-{formatEGP(discount)}</span>
+                <dt>Discount</dt>
+                <dd>-{formatEGP(discount)}</dd>
               </div>
             )}
             <div className="flex justify-between text-stone-600">
-              <span>Delivery</span>
-              <span>{formatEGP(deliveryFee)}</span>
+              <dt>Delivery</dt>
+              <dd>{deliveryFee > 0 ? formatEGP(deliveryFee) : "Free"}</dd>
             </div>
-            <div className="flex justify-between border-t border-stone-100 pt-2 text-base font-bold text-stone-800">
-              <span>Total</span>
-              <span>{formatEGP(total)}</span>
+            <div className="flex justify-between border-t border-stone-100 pt-2 text-lg font-bold text-stone-800">
+              <dt>Total</dt>
+              <dd>{formatEGP(total)}</dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </aside>
       </div>
     </div>
   );

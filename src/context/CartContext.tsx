@@ -36,7 +36,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      const parsed = raw ? JSON.parse(raw) : [];
+      // Drop anything malformed (e.g. from an older version of the site).
+      if (Array.isArray(parsed)) {
+        setItems(
+          parsed.filter(
+            (i) => i && typeof i.key === "string" && typeof i.id === "string" && Array.isArray(i.uploadedImageUrls)
+          )
+        );
+      }
       const rawCoupon = localStorage.getItem(COUPON_STORAGE_KEY);
       if (rawCoupon) setCoupon(JSON.parse(rawCoupon));
     } catch {
@@ -47,13 +55,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // storage full or blocked (private mode) — cart still works for this visit
+    }
   }, [items, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (coupon) localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(coupon));
-    else localStorage.removeItem(COUPON_STORAGE_KEY);
+    try {
+      if (coupon) localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(coupon));
+      else localStorage.removeItem(COUPON_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }, [coupon, isHydrated]);
 
   function addItem(item: CartItem) {
@@ -66,7 +82,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function updateQuantity(key: string, quantity: number) {
     setItems((prev) =>
-      prev.map((i) => (i.key === key ? { ...i, quantity: Math.max(1, quantity) } : i))
+      prev.map((i) => (i.key === key ? { ...i, quantity: Math.max(1, Math.min(500, quantity)) } : i))
     );
   }
 

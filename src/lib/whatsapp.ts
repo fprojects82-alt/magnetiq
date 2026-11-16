@@ -6,6 +6,8 @@ interface OrderLikeItem {
   size?: string | null;
   quantity: number;
   unitPrice: number;
+  photoCount?: number;
+  photosLater?: boolean;
 }
 
 interface OrderLike {
@@ -28,11 +30,12 @@ export function buildWhatsAppOrderLink(order: OrderLike, whatsappNumber: string)
     "",
     ...order.items.map(
       (item) =>
-        `• ${item.name}${item.size ? ` (${item.size})` : ""} x${item.quantity} — ${formatEGP(item.unitPrice * item.quantity)}`
+        `• ${item.name}${item.size ? ` (${item.size})` : ""} x${item.quantity} — ${formatEGP(item.unitPrice * item.quantity)}` +
+        (item.photosLater ? `\n   📸 ${item.photoCount ?? 0} photos uploaded, sending the rest here` : "")
     ),
     "",
     `Subtotal: ${formatEGP(order.subtotal)}`,
-    order.discount > 0 ? `Discount: -${formatEGP(order.discount)}` : "",
+    order.discount > 0 ? `Discount: -${formatEGP(order.discount)}` : null,
     `Delivery: ${formatEGP(order.deliveryFee)}`,
     `Total: ${formatEGP(order.total)}`,
     "",
@@ -41,7 +44,7 @@ export function buildWhatsAppOrderLink(order: OrderLike, whatsappNumber: string)
     `Address: ${order.address}, ${order.city}`,
     "",
     `Payment: ${PAYMENT_METHOD_LABELS[order.paymentMethod as PaymentMethod] ?? order.paymentMethod}`,
-  ].filter(Boolean);
+  ].filter((line): line is string => line !== null);
 
   const text = encodeURIComponent(lines.join("\n"));
   return `https://wa.me/${whatsappNumber}?text=${text}`;

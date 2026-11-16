@@ -69,8 +69,7 @@ export function Parallax({
 }
 
 /**
- * Fades and slides content up each time it scrolls into view; the animation
- * resets when the element leaves the viewport so it replays on re-entry.
+ * Fades and slides content up the first time it scrolls into view.
  */
 export function Reveal({
   children,
@@ -92,8 +91,13 @@ export function Reveal({
       return;
     }
     const io = new IntersectionObserver(
-      ([entry]) => setShown(entry.isIntersecting),
-      { threshold: 0.12 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -5% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();

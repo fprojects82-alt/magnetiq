@@ -15,7 +15,12 @@ const ALLOWED_TYPES: Record<string, string> = {
 const MAX_SIZE = 10 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid upload" }, { status: 400 });
+  }
   const file = formData.get("file");
 
   if (!(file instanceof File)) {
@@ -23,7 +28,10 @@ export async function POST(req: NextRequest) {
   }
   const ext = ALLOWED_TYPES[file.type];
   if (!ext) {
-    return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unsupported photo format. Please use JPG, PNG or WEBP." },
+      { status: 400 }
+    );
   }
   if (file.size > MAX_SIZE) {
     return NextResponse.json({ error: "File too large" }, { status: 400 });
@@ -35,11 +43,16 @@ export async function POST(req: NextRequest) {
   // photos go to Blob storage. Locally (no token) we keep writing to public/uploads
   // so the app runs with no cloud setup.
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(`uploads/${filename}`, file, {
-      access: "public",
-      contentType: file.type,
-    });
-    return NextResponse.json({ url: blob.url });
+    try {
+      const blob = await put(`uploads/${filename}`, file, {
+        access: "public",
+        contentType: file.type,
+      });
+      return NextResponse.json({ url: blob.url });
+    } catch (err) {
+      console.error("Blob upload failed", err);
+      return NextResponse.json({ error: "Upload failed, please try again." }, { status: 502 });
+    }
   }
 
   const bytes = await file.arrayBuffer();

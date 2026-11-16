@@ -8,11 +8,16 @@ Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma and MongoDB
 ## Features
 
 **Storefront**
-- Small and large photo magnets, event cards (save-the-date, engagement, proposal, wedding)
-- Bundle packages and discount offers, managed from the admin panel
-- Photo upload with a live magnet-shaped preview
+- Two print lines from the price sheets, each in bundles of 6 / 8 / 12 / 15 / 20 / 28 photos:
+  - **Pressed Prints**: 5 x 5 cm rounded squares, 5 pressed layers (270–960 EGP)
+  - **Flat Prints**: 7 x 10 cm polaroid-style, 2 layers (200–560 EGP)
+- Event cards with a photo magnet (engagement, save-the-date, proposal, wedding)
+- One-page bundle builder: pick a size, select all photos at once, order. Phone photos
+  (incl. large / HEIC) are resized to JPEG in the browser before upload
+- "I'll send my photos on WhatsApp" option for customers who'd rather not upload
 - Cart with coupon codes, guest checkout, order confirmation with confetti
 - Cash on Delivery or InstaPay, plus a pre-filled WhatsApp order handoff
+- Real product photos and the engagement-card video live in `public/media`
 
 **Customer accounts**
 - Sign up / log in, order history, and auto-filled checkout details
@@ -54,5 +59,9 @@ so local development needs no cloud services beyond the database.
 
 ## Notes
 
-- Prices are in EGP and are editable from the admin panel.
+- Prices are in EGP and are editable from the admin panel (Packages). A package's
+  "Print line" groups it with the other sizes of the same line on the order page.
+- Re-running the seed upserts by slug and hides (never deletes) anything not in it,
+  so it is safe to run against a database with existing orders.
+- Optional: set `NEXT_PUBLIC_SITE_URL` (e.g. `https://magnetiq.eg`) for correct social share previews.
 - Change `ADMIN_PASSWORD` and `SESSION_SECRET` before going live.

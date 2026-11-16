@@ -1,21 +1,114 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { db } from "@/lib/db";
+import { PRINT_LINES, PRINT_LINE_KEYS } from "@/lib/catalog";
+import { getLineBundles } from "@/lib/bundles";
 import { BackButton } from "@/components/BackButton";
 import { PackageCard } from "@/components/PackageCard";
+import { PriceList } from "@/components/PriceList";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "Photo Magnet Bundles & Prices",
+  description: "Pressed 5×5 cm photo magnets from 34 EGP each, flat 7×10 cm prints from 20 EGP each. Pick a bundle and upload your photos.",
+};
+
 export default async function PackagesPage() {
-  const packages = await db.package.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
+  const [lines, others] = await Promise.all([
+    Promise.all(PRINT_LINE_KEYS.map(async (key) => ({ line: PRINT_LINES[key], bundles: await getLineBundles(key) }))),
+    db.package.findMany({ where: { active: true, line: null }, orderBy: { sortOrder: "asc" } }),
+  ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <BackButton />
-      <h1 className="text-3xl font-bold text-stone-800">Deals &amp; Packages</h1>
-      <p className="mt-2 text-stone-500">Bundle up your favorite magnets and cards for a better price.</p>
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {packages.map((pkg) => (
-          <PackageCard key={pkg.id} {...pkg} />
+      <p className="font-script text-2xl text-brand">Moments That Stick</p>
+      <h1 className="text-3xl font-bold text-stone-800 sm:text-4xl">Choose your magnets</h1>
+      <p className="mt-2 max-w-2xl text-stone-600">
+        Two styles, six bundle sizes each. The bigger the bundle, the less each photo costs. Tap a bundle to upload your photos.
+      </p>
+
+      {/* quick jump */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-lg">
+        {lines.map(({ line, bundles }) => (
+          <a key={line.key} href={`#${line.anchor}`} className="card-surface flex items-center gap-3 p-3 transition hover:border-brand">
+            <img src={line.cover} alt="" className="h-14 w-14 rounded-xl object-cover" />
+            <span>
+              <span className="block font-semibold text-stone-800">{line.name}</span>
+              {bundles.length > 0 && (
+                <span className="text-xs text-stone-500">
+                  from {Math.min(...bundles.map((b) => Math.round(b.price / b.photoSlots)))} EGP each
+                </span>
+              )}
+            </span>
+          </a>
         ))}
+      </div>
+
+      {lines.map(({ line, bundles }) => (
+        <section key={line.key} id={line.anchor} className="mt-14 scroll-mt-28" aria-labelledby={`${line.anchor}-title`}>
+          <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+            <div>
+              <h2 id={`${line.anchor}-title`} className="section-title">
+                {line.name} Bundles
+              </h2>
+              <p className="mt-2 text-stone-700">
+                <strong>Size:</strong> {line.size} · <span lang="ar" dir="rtl">{line.sizeAr}</span>
+              </p>
+              <p className="mt-1 text-stone-600">{line.tagline}</p>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {line.gallery.map((img, i) => (
+                  <img
+                    key={img.src}
+                    src={img.src}
+                    alt={img.alt}
+                    loading="lazy"
+                    className={`w-full rounded-2xl object-cover shadow-md ${i === 0 ? "col-span-3 aspect-[4/3]" : "aspect-square"}`}
+                  />
+                ))}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-brand/20 bg-white p-4 text-sm">
+                <p className="font-semibold text-stone-800">
+                  {line.layers}: <span className="font-normal text-stone-600">{line.layersDetail}</span>
+                </p>
+                <p className="mt-1 text-stone-600" lang="ar" dir="rtl">{line.layersAr}</p>
+                <a href={line.priceSheet} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-brand underline">
+                  View the {line.name.toLowerCase()} price sheet
+                </a>
+              </div>
+            </div>
+
+            <div>
+              {bundles.length === 0 ? (
+                <p className="text-stone-500">These bundles are coming back soon. Message us on WhatsApp to order.</p>
+              ) : (
+                <PriceList line={line} bundles={bundles} />
+              )}
+            </div>
+          </div>
+        </section>
+      ))}
+
+      {others.length > 0 && (
+        <section className="mt-14">
+          <h2 className="section-title">Gift sets</h2>
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            {others.map((pkg) => (
+              <PackageCard key={pkg.id} {...pkg} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="mt-14 rounded-3xl bg-brand p-6 text-center text-white sm:p-10">
+        <p className="font-display text-2xl font-bold italic">Planning an engagement or wedding?</p>
+        <p className="mt-2 text-white/85">Our event cards come with your photo as a magnet guests take home.</p>
+        <Link href="/event-cards" className="mt-4 inline-flex min-h-[48px] items-center rounded-full bg-white px-6 font-semibold text-brand">
+          See event cards
+        </Link>
       </div>
     </div>
   );

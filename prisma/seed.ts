@@ -3,147 +3,145 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Prices from the Magnetiq price sheets.
+// Pressed Prints Bundles (5 layers) — 5 x 5 cm rounded square.
+const PRESSED_BUNDLES: [pieces: number, price: number][] = [
+  [6, 270],
+  [8, 340],
+  [12, 480],
+  [15, 570],
+  [20, 720],
+  [28, 960],
+];
+
+// Rectangle Flat Prints Bundles (2 layers) — 7 x 10 cm. `save` is the amount
+// printed under each price on the sheet.
+const FLAT_BUNDLES: [pieces: number, price: number, save: number][] = [
+  [6, 200, 120],
+  [8, 250, 180],
+  [12, 300, 250],
+  [15, 360, 320],
+  [20, 400, 450],
+  [28, 560, 600],
+];
+
+const POPULAR = 12;
+
+function pressedPackages() {
+  const base = PRESSED_BUNDLES[0][1] / PRESSED_BUNDLES[0][0]; // 45 EGP each in the smallest bundle
+  return PRESSED_BUNDLES.map(([pieces, price], i) => {
+    const each = Math.round(price / pieces);
+    const fullPrice = Math.round(base * pieces);
+    return {
+      slug: `pressed-${pieces}`,
+      name: `${pieces} Pressed Photos`,
+      description: `${pieces} pressed photo magnets, 5 x 5 cm rounded squares made of 5 pressed layers (lamination, photo, metal, plastic backing, magnet). Only ${each} EGP each.`,
+      price,
+      compareAtPrice: fullPrice > price ? fullPrice : null,
+      badge: pieces === POPULAR ? "Most popular" : pieces === 28 ? "Best value" : null,
+      composition: `${pieces} x Pressed magnets (5 x 5 cm) · ${each} EGP each`,
+      sampleImageUrl: "/media/pressed-flatlay.webp",
+      photoSlots: pieces,
+      line: "PRESSED",
+      active: true,
+      sortOrder: i + 1,
+    };
+  });
+}
+
+function flatPackages() {
+  return FLAT_BUNDLES.map(([pieces, price, save], i) => ({
+    slug: `flat-${pieces}`,
+    name: `${pieces} Flat Photos`,
+    description: `${pieces} flat photo magnets, 7 x 10 cm polaroid-style rectangles in 2 layers (photo + magnet). Save ${save} EGP.`,
+    price,
+    compareAtPrice: price + save,
+    badge: pieces === POPULAR ? "Most popular" : `Save ${save} EGP`,
+    composition: `${pieces} x Flat prints (7 x 10 cm) · ${Math.round(price / pieces)} EGP each`,
+    sampleImageUrl: "/media/flat-fridge-wall.webp",
+    photoSlots: pieces,
+    line: "FLAT",
+    active: true,
+    sortOrder: 100 + i + 1,
+  }));
+}
+
+const EVENT_CARDS = [
+  {
+    slug: "engagement-card",
+    name: "Engagement Card with Magnet",
+    type: "EVENT_CARD",
+    description:
+      "A printed engagement card with your photo as a pressed magnet that guests take home. Add your names, date and a line of text.",
+    price: 90,
+    sampleImageUrl: "/media/engagement-cards.webp",
+    sortOrder: 1,
+  },
+  {
+    slug: "save-the-date-card",
+    name: "Save the Date Card",
+    type: "EVENT_CARD",
+    description:
+      "A printed Save the Date card with an embedded custom-photo magnet. Upload your photo and add your names and date.",
+    price: 90,
+    sampleImageUrl: "/samples/card-save-the-date.svg",
+    sortOrder: 2,
+  },
+  {
+    slug: "proposal-card",
+    name: "Welcome to Our Proposal Card",
+    type: "EVENT_CARD",
+    description:
+      "A welcome card for your proposal event, with an embedded custom-photo magnet of the special moment.",
+    price: 95,
+    sampleImageUrl: "/samples/card-proposal.svg",
+    sortOrder: 3,
+  },
+  {
+    slug: "wedding-invitation-card",
+    name: "Wedding Invitation Card",
+    type: "EVENT_CARD",
+    description: "An elegant wedding invitation card with an embedded custom-photo magnet of the couple.",
+    price: 100,
+    sampleImageUrl: "/samples/card-wedding.svg",
+    sortOrder: 4,
+  },
+];
+
 async function main() {
-  await prisma.product.deleteMany();
-  await prisma.package.deleteMany();
+  // Upsert by slug instead of wiping collections, so re-seeding never breaks
+  // links from existing orders. Anything not in this file is hidden, not deleted.
+  const packages = [...pressedPackages(), ...flatPackages()];
+  for (const pkg of packages) {
+    await prisma.package.upsert({ where: { slug: pkg.slug }, update: pkg, create: pkg });
+  }
+  await prisma.package.updateMany({
+    where: { slug: { notIn: packages.map((p) => p.slug) } },
+    data: { active: false },
+  });
+
+  for (const card of EVENT_CARDS) {
+    const data = { ...card, compareAtPrice: null, active: true };
+    await prisma.product.upsert({ where: { slug: card.slug }, update: data, create: data });
+  }
+  await prisma.product.updateMany({
+    where: { slug: { notIn: EVENT_CARDS.map((c) => c.slug) } },
+    data: { active: false },
+  });
+
   await prisma.offer.deleteMany();
-
-  await prisma.product.createMany({
-    data: [
-      {
-        slug: "small-magnet",
-        name: "Small Photo Magnet",
-        type: "MAGNET_SMALL",
-        description:
-          "A 5x5cm custom photo magnet — upload any picture and we print it onto a durable fridge magnet. Perfect for gifting or collecting memories on your fridge.",
-        price: 60,
-        compareAtPrice: null,
-        sampleImageUrl: "/samples/small-magnet.svg",
-        sortOrder: 1,
-      },
-      {
-        slug: "large-magnet",
-        name: "Large Photo Magnet",
-        type: "MAGNET_LARGE",
-        description:
-          "A 9x9cm custom photo magnet for bigger memories and more detail. Same durable glossy print, bigger canvas.",
-        price: 120,
-        compareAtPrice: 140,
-        sampleImageUrl: "/samples/large-magnet.svg",
-        sortOrder: 2,
-      },
-      {
-        slug: "save-the-date-card",
-        name: "Save the Date Card",
-        type: "EVENT_CARD",
-        description:
-          "A printed Save the Date card with an embedded custom-photo magnet insert. Upload your photo and add your names & date.",
-        price: 90,
-        compareAtPrice: null,
-        sampleImageUrl: "/samples/card-save-the-date.svg",
-        sortOrder: 3,
-      },
-      {
-        slug: "engagement-card",
-        name: "Engagement Announcement Card",
-        type: "EVENT_CARD",
-        description:
-          "Announce your engagement in style with a printed card featuring your custom photo magnet insert.",
-        price: 90,
-        compareAtPrice: null,
-        sampleImageUrl: "/samples/card-engagement.svg",
-        sortOrder: 4,
-      },
-      {
-        slug: "proposal-card",
-        name: "Welcome to Our Proposal Card",
-        type: "EVENT_CARD",
-        description:
-          "A beautiful welcome card for your proposal event, with an embedded custom-photo magnet insert of the special moment.",
-        price: 95,
-        compareAtPrice: null,
-        sampleImageUrl: "/samples/card-proposal.svg",
-        sortOrder: 5,
-      },
-      {
-        slug: "wedding-invitation-card",
-        name: "Wedding Invitation Card",
-        type: "EVENT_CARD",
-        description:
-          "An elegant wedding invitation card with an embedded custom-photo magnet insert of the couple.",
-        price: 100,
-        compareAtPrice: null,
-        sampleImageUrl: "/samples/card-wedding.svg",
-        sortOrder: 6,
-      },
-    ],
-  });
-
-  await prisma.package.createMany({
-    data: [
-      {
-        slug: "set-of-5-small",
-        name: "Set of 5 Small Magnets",
-        description: "Five 5x5cm custom photo magnets — mix and match your favorite pictures. Great value bundle.",
-        price: 250,
-        compareAtPrice: 300,
-        badge: "Save 50 EGP",
-        composition: "5 x Small Magnets (5x5cm)",
-        sampleImageUrl: "/samples/package-5-small.svg",
-        photoSlots: 5,
-        sortOrder: 1,
-      },
-      {
-        slug: "family-pack-10",
-        name: "Family Pack — 10 Magnets",
-        description: "Ten small magnets to cover the whole fridge with memories. Our best-selling bundle.",
-        price: 450,
-        compareAtPrice: 600,
-        badge: "Save 150 EGP",
-        composition: "10 x Small Magnets (5x5cm)",
-        sampleImageUrl: "/samples/package-10-small.svg",
-        photoSlots: 10,
-        sortOrder: 2,
-      },
-      {
-        slug: "valentine-bundle",
-        name: "Valentine Bundle",
-        description: "Two large magnets plus one event card — the perfect romantic gift bundle.",
-        price: 220,
-        compareAtPrice: 330,
-        badge: "-33% Valentine Sale",
-        composition: "2 x Large Magnets + 1 x Event Card",
-        sampleImageUrl: "/samples/package-valentine.svg",
-        photoSlots: 3,
-        sortOrder: 3,
-      },
-      {
-        slug: "duo-large-magnets",
-        name: "Duo Large Magnets",
-        description: "Two large 9x9cm magnets bundled together at a better price.",
-        price: 220,
-        compareAtPrice: 240,
-        badge: "Save 20 EGP",
-        composition: "2 x Large Magnets (9x9cm)",
-        sampleImageUrl: "/samples/package-duo-large.svg",
-        photoSlots: 2,
-        sortOrder: 4,
-      },
-    ],
-  });
-
   await prisma.offer.createMany({
     data: [
       {
-        title: "Valentine Sale — up to 50% off",
-        description: "Turn your favorite moments into magnets and cards this Valentine season. Limited time offer on bundles.",
-        badgeText: "-50%",
+        title: "Bundle & save: pressed magnets from 34 EGP each",
+        description: "The more moments you print, the less each one costs. 28 pressed photos for 960 EGP.",
+        badgeText: "From 34 EGP",
         active: true,
       },
       {
-        title: "Free delivery over 300 EGP",
-        description: "Spend 300 EGP or more and delivery is on us, anywhere in Egypt.",
-        badgeText: "Free Delivery",
+        title: "Flat prints: save up to 600 EGP",
+        description: "28 polaroid-style flat photo magnets for just 560 EGP.",
+        badgeText: "Save 600",
         active: true,
       },
     ],
@@ -155,6 +153,7 @@ async function main() {
     create: {
       id: "singleton",
       whatsappNumber: process.env.WHATSAPP_NUMBER || "201234567890",
+      instapayNumber: process.env.INSTAPAY_NUMBER || "",
       deliveryFee: Number(process.env.DELIVERY_FEE || 50),
     },
   });
@@ -177,7 +176,7 @@ async function main() {
   });
 
   console.log("Seed complete.");
-  console.log(`Admin login -> email: ${email} / password: ${password}`);
+  console.log(`Admin login -> ${email}`);
 }
 
 main()

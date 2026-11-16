@@ -3,6 +3,16 @@ import { db } from "@/lib/db";
 import { formatEGP } from "@/lib/currency";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { EventCardText } from "@/lib/types";
+import { isAllowedUploadUrl } from "@/lib/orders";
+
+function safeParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 export const dynamic = "force-dynamic";
 
@@ -46,15 +56,22 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
 
         <div className="sm:col-span-2 space-y-4">
           {order.items.map((item) => {
-            const images: string[] = JSON.parse(item.uploadedImageUrls || "[]");
-            const customText: EventCardText | null = item.customText ? JSON.parse(item.customText) : null;
+            const images = safeParse<string[]>(item.uploadedImageUrls, []).filter(isAllowedUploadUrl);
+            const customText = safeParse<EventCardText | null>(item.customText, null);
             return (
               <div key={item.id} className="card-surface p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h3 className="font-semibold text-stone-800">{item.name} x{item.quantity}</h3>
                     {customText?.names && <p className="text-sm text-stone-500">{customText.names} — {customText.eventDate}</p>}
-                    {customText?.message && <p className="text-sm text-stone-500">"{customText.message}"</p>}
+                    {customText?.message && <p className="text-sm text-stone-500">&ldquo;{customText.message}&rdquo;</p>}
+                    {item.size && <p className="text-sm text-stone-500">{item.size}</p>}
+                    <p className="text-sm text-stone-500">{images.length} photo{images.length === 1 ? "" : "s"} uploaded</p>
+                    {customText?.photosLater && (
+                      <p className="mt-1 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
+                        Customer is sending remaining photos on WhatsApp
+                      </p>
+                    )}
                   </div>
                   <span className="font-semibold text-brand">{formatEGP(item.unitPrice * item.quantity)}</span>
                 </div>
