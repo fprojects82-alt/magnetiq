@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { attachPaymentProof } from "@/app/order/[orderNumber]/confirmation/actions";
 import { UploadError, uploadPhoto } from "@/lib/uploadClient";
 import { useLang } from "@/context/LangContext";
+import Link from "next/link";
 import { OrderSteps, StuckBox } from "./OrderSteps";
+import { ConfettiBurst } from "./ConfettiBurst";
 
 export function CopyButton({ text, label }: { text: string; label?: string }) {
   const { t } = useLang();
@@ -25,6 +27,33 @@ export function CopyButton({ text, label }: { text: string; label?: string }) {
     >
       {copied ? t.common.copied : label ?? t.common.copy}
     </button>
+  );
+}
+
+/** Big order code with "save this to track your order". Shown once the order is confirmed. */
+export function OrderCodeBox({ orderNumber, name }: { orderNumber: string; name: string }) {
+  const { t } = useLang();
+  const p = t.pay;
+  return (
+    <div className="text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700" aria-hidden>
+        ✓
+      </div>
+      <h1 className="mt-3 font-display text-3xl font-bold text-stone-800 sm:text-4xl">{p.thanks(name)}</h1>
+      <div className="mt-5 rounded-2xl border-2 border-dashed border-brand/40 bg-white p-4">
+        <p className="text-sm font-semibold text-stone-600">{p.orderNumberIs}</p>
+        <p className="mt-1 flex items-center justify-center gap-2">
+          <strong className="font-mono text-2xl tracking-wider text-brand sm:text-3xl" dir="ltr">
+            {orderNumber}
+          </strong>
+          <CopyButton text={orderNumber} />
+        </p>
+        <p className="mt-2 text-sm text-stone-600">💾 {p.saveIt}</p>
+        <Link href="/track" className="mt-1 inline-block text-xs font-semibold text-brand underline">
+          {p.trackLink}
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -71,18 +100,22 @@ export function PaymentFlow({
   instapayNumber,
   initialProofUrl,
   helpHref,
+  customerName,
 }: {
   orderNumber: string;
   total: number;
   instapayNumber: string;
   initialProofUrl: string | null;
   helpHref: string;
+  customerName: string;
 }) {
   const { t, fmt } = useLang();
   const p = t.pay;
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(Boolean(initialProofUrl));
+  // Celebrate only at the moment the customer confirms, not on later visits.
+  const [justConfirmed, setJustConfirmed] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(initialProofUrl);
   const [uploading, setUploading] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -117,10 +150,22 @@ export function PaymentFlow({
     }
     setProofUrl(pendingUrl);
     setConfirmed(true);
+    setJustConfirmed(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
-    <section className="mt-6 space-y-4 text-start" aria-labelledby="pay-title">
+    <section className="space-y-4 text-start" aria-labelledby="pay-title">
+      {justConfirmed && <ConfettiBurst />}
+      {confirmed ? (
+        <OrderCodeBox orderNumber={orderNumber} name={customerName} />
+      ) : (
+        <div className="text-center">
+          <h1 className="font-display text-3xl font-bold text-stone-800 sm:text-4xl">{p.almostTitle}</h1>
+          <p className="mt-2 text-stone-600">{p.almostSub}</p>
+        </div>
+      )}
+
       <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
         <OrderSteps current={current} t={t} />
       </div>
@@ -213,7 +258,7 @@ export function PaymentFlow({
         </>
       )}
 
-      <StuckBox t={t} href={helpHref} />
+      <StuckBox t={t} href={helpHref} code={orderNumber} />
     </section>
   );
 }

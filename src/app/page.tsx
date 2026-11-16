@@ -129,23 +129,17 @@ export default async function HomePage() {
                     </p>
                     <p className="text-sm text-stone-500">{lt.layersDetail}</p>
                     {lt.note && <p className="mt-1 text-sm font-semibold text-brand">{lt.note}</p>}
-                    {/* Compact price grid: quantity on top, price below. */}
-                    <div className="mt-4 grid grid-cols-4 gap-1.5">
-                      {bundles.map((b) => (
-                        <Link
-                          key={b.slug}
-                          href={shopHref(line, b.photoSlots)}
-                          className="flex flex-col items-center rounded-xl border border-brand/20 px-1 py-1.5 text-center leading-tight hover:border-brand hover:bg-brand hover:text-white"
-                        >
-                          <span className="text-sm font-bold">×{b.photoSlots}</span>
-                          <span className="text-[11px] opacity-70">{b.price}</span>
-                        </Link>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-[11px] text-stone-400">{h.pricesIn}</p>
-                    <div className="mt-auto pt-6">
-                      <Link href={shopHref(line, popular?.photoSlots)} className="btn-primary w-full">
-                        {h.orderLine(lt.name)}
+                    <div className="mt-auto pt-5">
+                      {bundles.length > 0 && (
+                        <div className="mb-3 rounded-xl bg-brand/5 px-3 py-2">
+                          <p className="whitespace-nowrap font-bold text-brand">
+                            {h.priceRange(String(bundles[0].price), fmt(bundles[bundles.length - 1].price))}
+                          </p>
+                          <p className="text-xs text-stone-500">{h.sizesNote(bundles.length)}</p>
+                        </div>
+                      )}
+                      <Link href={shopHref(line, popular?.photoSlots)} className="btn-primary w-full" aria-label={h.orderLine(lt.name)}>
+                        {t.common.orderNow}
                       </Link>
                     </div>
                   </div>

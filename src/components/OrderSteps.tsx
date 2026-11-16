@@ -37,12 +37,20 @@ export function OrderSteps({ current, t }: { current: number; t: Dict }) {
 }
 
 /** "Stuck? Contact us on WhatsApp" box shown during checkout and payment. */
-export function StuckBox({ t, href }: { t: Dict; href: string }) {
+export function StuckBox({ t, href, code }: { t: Dict; href: string; code?: string }) {
   return (
     <div className="flex flex-col items-start gap-3 rounded-2xl border border-[#1f9e4f]/30 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between">
       <span className="text-sm text-stone-700">
         <strong className="block text-stone-800">{t.pay.stuckTitle}</strong>
         {t.pay.stuckText}
+        {code && (
+          <span className="mt-1 block text-xs text-stone-500">
+            {t.pay.stuckCode("")}
+            <span className="font-mono font-semibold text-stone-700" dir="ltr">
+              {code}
+            </span>
+          </span>
+        )}
       </span>
       <a
         href={href}

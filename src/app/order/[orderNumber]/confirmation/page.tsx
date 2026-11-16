@@ -9,9 +9,8 @@ import { getServerDict } from "@/lib/i18n-server";
 import { money } from "@/lib/i18n";
 import { bundleLabel } from "@/lib/catalog";
 import { getZone, zoneEta, zoneName } from "@/lib/shipping";
-import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { WhatsAppIcon } from "@/components/WhatsAppButton";
-import { CopyButton, PaymentFlow } from "@/components/PaymentProof";
+import { OrderCodeBox, PaymentFlow } from "@/components/PaymentProof";
 import { OrderStatusTracker } from "@/components/OrderStatusTracker";
 import { ReviewForm } from "@/components/ReviewForm";
 
@@ -54,7 +53,8 @@ export default async function OrderConfirmationPage({ params }: { params: { orde
   const anyPhotosLater = items.some((i) => i.photosLater);
   const zone = getZone(order.deliveryZone);
   const isInstapay = order.paymentMethod === "INSTAPAY";
-  const fresh = order.status === "PENDING" && !order.paidAt && !order.paymentProofUrl;
+  // Still paying: show the payment steps instead of the "done" view.
+  const awaitingPayment = isInstapay && !order.paidAt && !order.paymentProofUrl;
 
   // Item names in the visitor's language, from each package's slug.
   const packageIds = items.map((i) => i.packageId).filter((id): id is string => Boolean(id));
@@ -98,42 +98,26 @@ export default async function OrderConfirmationPage({ params }: { params: { orde
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 text-center sm:py-12">
-      {fresh && <ConfettiBurst />}
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700" aria-hidden>
-        ✓
-      </div>
-      <h1 className="mt-3 font-display text-3xl font-bold text-stone-800 sm:text-4xl">{p.thanks(order.customerName.split(" ")[0])}</h1>
-
-      {/* Order number — save it to track the order */}
-      <div className="mt-5 rounded-2xl border-2 border-dashed border-brand/40 bg-white p-4">
-        <p className="text-sm font-semibold text-stone-600">{p.orderNumberIs}</p>
-        <p className="mt-1 flex items-center justify-center gap-2">
-          <strong className="font-mono text-2xl tracking-wider text-brand sm:text-3xl" dir="ltr">
-            {order.orderNumber}
-          </strong>
-          <CopyButton text={order.orderNumber} />
-        </p>
-        <p className="mt-2 text-sm text-stone-600">💾 {p.saveIt}</p>
-        <Link href="/track" className="mt-1 inline-block text-xs font-semibold text-brand underline">
-          {p.trackLink}
-        </Link>
-      </div>
-
-      {isInstapay && !order.paidAt ? (
+      {awaitingPayment ? (
+        /* Steps 3–5 first; the order code and celebration appear after "Confirm payment". */
         <PaymentFlow
           orderNumber={order.orderNumber}
           total={order.total}
           instapayNumber={settings.instapayNumber}
           initialProofUrl={order.paymentProofUrl}
           helpHref={helpHref}
+          customerName={order.customerName.split(" ")[0]}
         />
       ) : (
-        <p className="mt-6 text-sm text-stone-600">
-          {p.questions}{" "}
-          <a href={helpHref} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
-            {p.messageUs}
-          </a>
-        </p>
+        <>
+          <OrderCodeBox orderNumber={order.orderNumber} name={order.customerName.split(" ")[0]} />
+          <p className="mt-4 text-sm text-stone-600">
+            {p.questions}{" "}
+            <a href={helpHref} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
+              {p.messageUs}
+            </a>
+          </p>
+        </>
       )}
 
       {anyPhotosLater && (
