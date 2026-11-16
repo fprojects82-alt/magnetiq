@@ -36,7 +36,7 @@ model Package {
   composition    String
   sampleImageUrl String
   photoSlots     Int      @default(1)
-  // "PRESSED" | "FLAT" for print bundles; null for anything else (mixed gift sets etc.)
+  // "PRESSED" | "FLAT" | "STICKER" for print bundles; null for anything else (mixed gift sets etc.)
   line           String?
   active         Boolean  @default(true)
   sortOrder      Int      @default(0)

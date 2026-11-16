@@ -28,14 +28,15 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
           <img src="/logo.png" alt="" className="h-16 w-16 rounded-2xl bg-white p-1" />
           <p className="mt-3 font-script text-2xl">Moments That Stick</p>
           <p className="mt-1 text-sm text-white/80">
-            Custom photo magnets and event cards, delivered all over Egypt.
+            Custom photo magnets, 3D stickers and event cards, delivered all over Egypt.
           </p>
         </div>
         <div>
           <h2 className="mb-3 font-semibold">Shop</h2>
           <ul className="space-y-2 text-sm text-white/85">
             <li><Link href="/packages#pressed" className="hover:underline">Pressed magnets (5 × 5 cm)</Link></li>
-            <li><Link href="/packages#flat" className="hover:underline">Flat prints (7 × 10 cm)</Link></li>
+            <li><Link href="/packages#flat" className="hover:underline">Flat magnets (7 × 10 cm)</Link></li>
+            <li><Link href="/packages#stickers" className="hover:underline">3D stickers (3 × 3 cm)</Link></li>
             <li><Link href="/event-cards" className="hover:underline">Event cards</Link></li>
             <li><Link href="/cart" className="hover:underline">Your cart</Link></li>
           </ul>

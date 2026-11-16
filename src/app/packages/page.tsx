@@ -10,8 +10,8 @@ import { PriceList } from "@/components/PriceList";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Photo Magnet Bundles & Prices",
-  description: "Pressed 5×5 cm photo magnets from 34 EGP each, flat 7×10 cm prints from 20 EGP each. Pick a bundle and upload your photos.",
+  title: "Photo Magnets & 3D Stickers: Prices",
+  description: "Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers. Order one or save with a bundle, then upload your photos.",
 };
 
 export default async function PackagesPage() {
@@ -24,13 +24,13 @@ export default async function PackagesPage() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <BackButton />
       <p className="font-script text-2xl text-brand">Moments That Stick</p>
-      <h1 className="text-3xl font-bold text-stone-800 sm:text-4xl">Choose your magnets</h1>
+      <h1 className="text-3xl font-bold text-stone-800 sm:text-4xl">Choose your magnets &amp; stickers</h1>
       <p className="mt-2 max-w-2xl text-stone-600">
-        Two styles, six bundle sizes each. The bigger the bundle, the less each photo costs. Tap a bundle to upload your photos.
+        Order a single piece or save with a bundle. The bigger the bundle, the less each photo costs. Tap a size to upload your photos.
       </p>
 
       {/* quick jump */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-lg">
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:max-w-3xl sm:grid-cols-3">
         {lines.map(({ line, bundles }) => (
           <a key={line.key} href={`#${line.anchor}`} className="card-surface flex items-center gap-3 p-3 transition hover:border-brand">
             <img src={line.cover} alt="" className="h-14 w-14 rounded-xl object-cover" />
@@ -51,12 +51,13 @@ export default async function PackagesPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
             <div>
               <h2 id={`${line.anchor}-title`} className="section-title">
-                {line.name} Bundles
+                {line.name}
               </h2>
               <p className="mt-2 text-stone-700">
                 <strong>Size:</strong> {line.size} · <span lang="ar" dir="rtl">{line.sizeAr}</span>
               </p>
               <p className="mt-1 text-stone-600">{line.tagline}</p>
+              {line.note && <p className="mt-1 font-semibold text-brand">{line.note}</p>}
 
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {line.gallery.map((img, i) => (

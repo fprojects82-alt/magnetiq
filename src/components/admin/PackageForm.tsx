@@ -67,15 +67,16 @@ export function PackageForm({ pkg }: PackageFormProps) {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700">Photo slots</label>
-          <input name="photoSlots" type="number" min={1} max={60} required defaultValue={pkg?.photoSlots ?? 1} className="input-field" />
+          <input name="photoSlots" type="number" min={1} max={200} required defaultValue={pkg?.photoSlots ?? 1} className="input-field" />
         </div>
       </div>
       <div>
         <label htmlFor="pkg-line" className="mb-1 block text-sm font-medium text-stone-700">Print line</label>
         <select id="pkg-line" name="line" defaultValue={pkg?.line ?? ""} className="input-field">
           <option value="">None (gift set / other)</option>
-          <option value="PRESSED">Pressed Prints (5 x 5 cm)</option>
-          <option value="FLAT">Flat Prints (7 x 10 cm)</option>
+          <option value="PRESSED">Pressed Magnets (5 x 5 cm)</option>
+          <option value="FLAT">Flat Magnets (7 x 10 cm)</option>
+          <option value="STICKER">3D Stickers (3 x 3 cm)</option>
         </select>
         <p className="mt-1 text-xs text-stone-400">Bundles in a print line are grouped together and shown as size options in the shop.</p>
       </div>

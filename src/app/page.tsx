@@ -18,13 +18,21 @@ const GALLERY = [
   { src: "/media/pressed-flatlay.webp", alt: "Pressed magnets arranged around a Magnetiq logo magnet", className: "" },
   { src: "/media/flat-fridge.webp", alt: "Flat photo magnets of family celebrations on a fridge", className: "row-span-2" },
   { src: "/media/pressed-and-flat.webp", alt: "Pressed and flat magnets of a family trip side by side", className: "" },
-  { src: "/media/engagement-cards.webp", alt: "A stack of engagement cards each holding a photo magnet", className: "" },
+  { src: "/media/stickers-3d.webp", alt: "Glossy 3D photo stickers scattered on a polka-dot background", className: "" },
 ];
 
 const FAQ = [
   {
     q: "What's the difference between pressed and flat magnets?",
-    a: "Pressed magnets are 5 × 5 cm rounded squares made of 5 pressed layers (lamination, photo, metal, plastic backing and magnet), so they're thick, glossy and sturdy. Flat prints are 7 × 10 cm polaroid-style rectangles with 2 layers (photo and magnet). They're lighter and cheaper, and great for covering a whole fridge.",
+    a: "Pressed magnets are 5 × 5 cm rounded squares made of 5 pressed layers (lamination, photo, metal, plastic backing and magnet), so they're thick, glossy and sturdy. Flat magnets are 7 × 10 cm polaroid-style rectangles with 2 layers (photo and magnet). They're lighter and cheaper, and great for covering a whole fridge.",
+  },
+  {
+    q: "What are 3D stickers?",
+    a: "Your photo as a 3 × 3 cm sticker with a glossy raised (domed) finish. They're available in any size. Message us on WhatsApp for a custom size.",
+  },
+  {
+    q: "Can I order just one?",
+    a: "Yes. One pressed magnet is 50 EGP, one flat magnet is 35 EGP and one 3D sticker is 50 EGP. Bundles bring the price per photo down a lot.",
   },
   {
     q: "How do I send my photos?",
@@ -77,13 +85,13 @@ export default async function HomePage() {
               <span className="italic text-brand">on your fridge.</span>
             </h1>
             <p className="mt-4 max-w-lg text-lg text-stone-600">
-              Custom photo magnets printed from your phone pictures. Pick a bundle, upload your photos, and we deliver
-              anywhere in Egypt. Pay cash on delivery.
+              Custom photo magnets and 3D stickers made from your phone pictures. Order one or a whole bundle, upload your
+              photos, and we deliver anywhere in Egypt. Pay cash on delivery.
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row">
               {lines.map(({ line, bundles }, i) => {
                 const each = fromEach(bundles);
-                const popular = bundles.find((b) => b.photoSlots === 12) ?? bundles[0];
+                const popular = bundles.find((b) => b.badge === "Most popular") ?? bundles[0];
                 return (
                   <Link
                     key={line.key}
@@ -134,12 +142,12 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-10" aria-labelledby="styles-title">
         <Reveal>
           <h2 id="styles-title" className="section-title text-center">Pick your style</h2>
-          <p className="mt-2 text-center text-stone-600">Both come in bundles of 6, 8, 12, 15, 20 and 28 photos.</p>
+          <p className="mt-2 text-center text-stone-600">Order a single piece, or save with a bundle.</p>
         </Reveal>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {lines.map(({ line, bundles }, i) => {
             const each = fromEach(bundles);
-            const popular = bundles.find((b) => b.photoSlots === 12) ?? bundles[0];
+            const popular = bundles.find((b) => b.badge === "Most popular") ?? bundles[0];
             return (
               <Reveal key={line.key} delay={i * 120}>
                 <article className="card-surface group flex h-full flex-col overflow-hidden">
@@ -157,6 +165,7 @@ export default async function HomePage() {
                       <strong>{line.size}</strong> · {line.layers}
                     </p>
                     <p className="text-sm text-stone-500">{line.layersDetail}</p>
+                    {line.note && <p className="mt-1 text-sm font-semibold text-brand">{line.note}</p>}
                     <div className="mt-4 flex flex-wrap gap-2">
                       {bundles.map((b) => (
                         <Link
@@ -170,7 +179,7 @@ export default async function HomePage() {
                     </div>
                     <div className="mt-auto pt-6">
                       <Link href={popular ? `/packages/${popular.slug}` : `/packages#${line.anchor}`} className="btn-primary w-full">
-                        Order {line.name.toLowerCase()}
+                        Order {line.name}
                       </Link>
                     </div>
                   </div>
@@ -198,7 +207,7 @@ export default async function HomePage() {
         </Reveal>
         <ol className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
-            { title: "Pick a bundle", desc: "Pressed or flat, 6 to 28 photos. Bigger bundles cost less per photo." },
+            { title: "Pick what you love", desc: "Pressed or flat magnets, or 3D stickers. One piece or a bundle: bigger bundles cost less per photo." },
             { title: "Upload your photos", desc: "Select them all at once from your phone, or send them later on WhatsApp." },
             { title: "We print & deliver", desc: "Pay cash when your magnets arrive, anywhere in Egypt." },
           ].map((s, i) => (

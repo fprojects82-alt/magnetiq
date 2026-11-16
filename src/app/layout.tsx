@@ -35,10 +35,10 @@ export const metadata: Metadata = {
     template: "%s | Magnetiq",
   },
   description:
-    "Turn your photos into fridge magnets. Pressed 5×5 cm magnets from 34 EGP each and flat 7×10 cm prints from 20 EGP each. Upload from your phone, pay cash on delivery, delivered all over Egypt.",
+    "Turn your photos into fridge magnets and 3D stickers. Pressed 5×5 cm magnets, flat 7×10 cm magnets and 3×3 cm 3D stickers, singles or bundles. Upload from your phone, pay cash on delivery, delivered all over Egypt.",
   openGraph: {
     title: "Magnetiq: Moments That Stick",
-    description: "Custom photo magnets: pressed 5×5 cm and flat 7×10 cm bundles. Delivered all over Egypt.",
+    description: "Custom photo magnets and 3D stickers. Delivered all over Egypt.",
     images: [{ url: "/media/og-image.jpg", width: 1200, height: 630, alt: "Magnetiq pressed photo magnets" }],
     type: "website",
   },

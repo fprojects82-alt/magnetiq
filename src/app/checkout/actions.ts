@@ -24,7 +24,7 @@ const cartItemSchema = z.object({
   name: z.string().max(200),
   size: z.string().max(60).optional(),
   quantity: z.number(),
-  uploadedImageUrls: z.array(z.string().max(500)).max(60),
+  uploadedImageUrls: z.array(z.string().max(500)).max(200),
   customText: z
     .object({
       names: shortText,

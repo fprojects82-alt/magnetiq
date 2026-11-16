@@ -8,9 +8,9 @@ import { useCart } from "@/context/CartContext";
 
 const NAV_LINKS = [
   { href: "/packages#pressed", label: "Pressed Magnets" },
-  { href: "/packages#flat", label: "Flat Prints" },
+  { href: "/packages#flat", label: "Flat Magnets" },
+  { href: "/packages#stickers", label: "3D Stickers" },
   { href: "/event-cards", label: "Event Cards" },
-  { href: "/#gallery", label: "Gallery" },
 ];
 
 function CartIcon() {

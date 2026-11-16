@@ -4,8 +4,10 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 // Prices from the Magnetiq price sheets.
-// Pressed Prints Bundles (5 layers) — 5 x 5 cm rounded square.
+// Pressed Magnets (5 layers) — 5 x 5 cm rounded square. Single piece: 50 EGP.
+const PRESSED_SINGLE = 50;
 const PRESSED_BUNDLES: [pieces: number, price: number][] = [
+  [1, PRESSED_SINGLE],
   [6, 270],
   [8, 340],
   [12, 480],
@@ -14,9 +16,10 @@ const PRESSED_BUNDLES: [pieces: number, price: number][] = [
   [28, 960],
 ];
 
-// Rectangle Flat Prints Bundles (2 layers) — 7 x 10 cm. `save` is the amount
-// printed under each price on the sheet.
+// Flat Magnets (2 layers) — 7 x 10 cm rectangle. `save` is the amount printed
+// under each price on the sheet. Single piece: 35 EGP.
 const FLAT_BUNDLES: [pieces: number, price: number, save: number][] = [
+  [1, 35, 0],
   [6, 200, 120],
   [8, 250, 180],
   [12, 300, 250],
@@ -25,21 +28,34 @@ const FLAT_BUNDLES: [pieces: number, price: number, save: number][] = [
   [28, 560, 600],
 ];
 
+// 3D Stickers — 3 x 3 cm, any size on request.
+const STICKER_BUNDLES: [pieces: number, price: number][] = [
+  [1, 50],
+  [3, 140],
+  [5, 240],
+  [10, 450],
+  [15, 650],
+  [20, 850],
+  [50, 2250],
+  [100, 3500],
+];
+
 const POPULAR = 12;
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 function pressedPackages() {
-  const base = PRESSED_BUNDLES[0][1] / PRESSED_BUNDLES[0][0]; // 45 EGP each in the smallest bundle
   return PRESSED_BUNDLES.map(([pieces, price], i) => {
     const each = Math.round(price / pieces);
-    const fullPrice = Math.round(base * pieces);
+    const fullPrice = PRESSED_SINGLE * pieces;
     return {
       slug: `pressed-${pieces}`,
-      name: `${pieces} Pressed Photos`,
-      description: `${pieces} pressed photo magnets, 5 x 5 cm rounded squares made of 5 pressed layers (lamination, photo, metal, plastic backing, magnet). Only ${each} EGP each.`,
+      name: plural(pieces, "Pressed Magnet"),
+      description: `${plural(pieces, "pressed photo magnet")}, 5 x 5 cm rounded square${pieces === 1 ? "" : "s"} made of 5 pressed layers (lamination, photo, metal, plastic backing, magnet). ${each} EGP each.`,
       price,
       compareAtPrice: fullPrice > price ? fullPrice : null,
       badge: pieces === POPULAR ? "Most popular" : pieces === 28 ? "Best value" : null,
-      composition: `${pieces} x Pressed magnets (5 x 5 cm) · ${each} EGP each`,
+      composition: `${pieces} x Pressed magnet (5 x 5 cm) · ${each} EGP each`,
       sampleImageUrl: "/media/pressed-flatlay.webp",
       photoSlots: pieces,
       line: "PRESSED",
@@ -52,18 +68,40 @@ function pressedPackages() {
 function flatPackages() {
   return FLAT_BUNDLES.map(([pieces, price, save], i) => ({
     slug: `flat-${pieces}`,
-    name: `${pieces} Flat Photos`,
-    description: `${pieces} flat photo magnets, 7 x 10 cm polaroid-style rectangles in 2 layers (photo + magnet). Save ${save} EGP.`,
+    name: plural(pieces, "Flat Magnet"),
+    description: `${plural(pieces, "flat photo magnet")}, 7 x 10 cm polaroid-style, 2 layers (photo + magnet).${save ? ` Save ${save} EGP.` : ""}`,
     price,
-    compareAtPrice: price + save,
-    badge: pieces === POPULAR ? "Most popular" : `Save ${save} EGP`,
-    composition: `${pieces} x Flat prints (7 x 10 cm) · ${Math.round(price / pieces)} EGP each`,
+    compareAtPrice: save ? price + save : null,
+    badge: pieces === POPULAR ? "Most popular" : save ? `Save ${save} EGP` : null,
+    composition: `${pieces} x Flat magnet (7 x 10 cm) · ${Math.round(price / pieces)} EGP each`,
     sampleImageUrl: "/media/flat-fridge-wall.webp",
     photoSlots: pieces,
     line: "FLAT",
     active: true,
     sortOrder: 100 + i + 1,
   }));
+}
+
+function stickerPackages() {
+  const single = STICKER_BUNDLES[0][1];
+  return STICKER_BUNDLES.map(([pieces, price], i) => {
+    const each = Math.round(price / pieces);
+    const fullPrice = single * pieces;
+    return {
+      slug: `sticker-${pieces}`,
+      name: plural(pieces, "3D Sticker"),
+      description: `${plural(pieces, "3D photo sticker")}, 3 x 3 cm with a glossy domed finish. Other sizes available on request.`,
+      price,
+      compareAtPrice: fullPrice > price ? fullPrice : null,
+      badge: pieces === 10 ? "Most popular" : pieces === 100 ? "Best value" : null,
+      composition: `${pieces} x 3D sticker (3 x 3 cm) · ${each} EGP each`,
+      sampleImageUrl: "/media/stickers-3d.webp",
+      photoSlots: pieces,
+      line: "STICKER",
+      active: true,
+      sortOrder: 200 + i + 1,
+    };
+  });
 }
 
 const EVENT_CARDS = [
@@ -111,7 +149,7 @@ const EVENT_CARDS = [
 async function main() {
   // Upsert by slug instead of wiping collections, so re-seeding never breaks
   // links from existing orders. Anything not in this file is hidden, not deleted.
-  const packages = [...pressedPackages(), ...flatPackages()];
+  const packages = [...pressedPackages(), ...flatPackages(), ...stickerPackages()];
   for (const pkg of packages) {
     await prisma.package.upsert({ where: { slug: pkg.slug }, update: pkg, create: pkg });
   }
@@ -139,9 +177,15 @@ async function main() {
         active: true,
       },
       {
-        title: "Flat prints: save up to 600 EGP",
+        title: "Flat magnets: save up to 600 EGP",
         description: "28 polaroid-style flat photo magnets for just 560 EGP.",
         badgeText: "Save 600",
+        active: true,
+      },
+      {
+        title: "New: 3D photo stickers",
+        description: "Glossy 3D domed stickers of your photos, from 50 EGP. 100 stickers for 3,500 EGP.",
+        badgeText: "New",
         active: true,
       },
     ],

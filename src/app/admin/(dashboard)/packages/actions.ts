@@ -18,8 +18,8 @@ const packageSchema = z.object({
   badge: z.string().trim().optional().nullable(),
   composition: z.string().trim().min(1),
   sampleImageUrl: z.string().trim().min(1),
-  photoSlots: z.coerce.number().int().min(1).max(60),
-  line: z.enum(["PRESSED", "FLAT"]).nullable(),
+  photoSlots: z.coerce.number().int().min(1).max(200),
+  line: z.enum(["PRESSED", "FLAT", "STICKER"]).nullable(),
   active: z.coerce.boolean(),
 });
 

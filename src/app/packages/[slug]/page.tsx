@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getPrintLine, PRINT_LINES } from "@/lib/catalog";
+import { getPrintLine, PRINT_LINES, PRINT_LINE_KEYS } from "@/lib/catalog";
 import { getLineBundles } from "@/lib/bundles";
 import { BackButton } from "@/components/BackButton";
 import { BundleBuilder, BundleOption } from "@/components/BundleBuilder";
@@ -49,7 +49,7 @@ export default async function PackageDetailPage({ params }: { params: { slug: st
   const line = getPrintLine(pkg.line);
   const siblings = line ? await getLineBundles(line.key) : [pkg];
   const options = (siblings.length ? siblings : [pkg]).map(toOption);
-  const other = line ? PRINT_LINES[line.key === "PRESSED" ? "FLAT" : "PRESSED"] : null;
+  const others = line ? PRINT_LINE_KEYS.filter((k) => k !== line.key).map((k) => PRINT_LINES[k]) : [];
 
   const images = line ? line.gallery : [{ src: pkg.sampleImageUrl, alt: pkg.name }];
 
@@ -78,9 +78,9 @@ export default async function PackageDetailPage({ params }: { params: { slug: st
         </div>
 
         <div>
-          {line && <p className="font-display text-lg font-bold italic text-brand">{line.name} Bundles</p>}
+          {line && <p className="font-display text-lg font-bold italic text-brand">{line.name}</p>}
           <h1 className="text-3xl font-bold text-stone-800 sm:text-4xl">
-            {line ? `Custom ${line.name.toLowerCase()}` : pkg.name}
+            {line ? `Custom ${line.name}` : pkg.name}
           </h1>
           <p className="mt-2 text-stone-600">{line ? line.tagline : pkg.description}</p>
           {line && (
@@ -88,6 +88,7 @@ export default async function PackageDetailPage({ params }: { params: { slug: st
               {line.size} · {line.layers} ({line.layersDetail})
             </p>
           )}
+          {line?.note && <p className="mt-1 text-sm font-semibold text-brand">{line.note}</p>}
           <ul className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-stone-700">
             <li className="rounded-full bg-white px-3 py-1.5 shadow-sm">🚚 Delivery all over Egypt</li>
             <li className="rounded-full bg-white px-3 py-1.5 shadow-sm">💵 Cash on delivery</li>
@@ -98,12 +99,17 @@ export default async function PackageDetailPage({ params }: { params: { slug: st
             <BundleBuilder bundles={options} initialSlug={pkg.slug} lineKey={line?.key ?? null} />
           </div>
 
-          {other && (
+          {others.length > 0 && (
             <p className="mt-8 text-sm text-stone-600">
-              Prefer {other.name.toLowerCase()} ({other.size})?{" "}
-              <Link href={`/packages#${other.anchor}`} className="font-semibold text-brand underline">
-                See {other.name} bundles
-              </Link>
+              Also try:{" "}
+              {others.map((o, i) => (
+                <span key={o.key}>
+                  {i > 0 && " · "}
+                  <Link href={`/packages#${o.anchor}`} className="font-semibold text-brand underline">
+                    {o.name} ({o.size})
+                  </Link>
+                </span>
+              ))}
             </p>
           )}
         </div>

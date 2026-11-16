@@ -148,7 +148,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
           <h2 id="step-size" className="step-title">
             <span className="step-num">1</span> How many photos?
           </h2>
-          <div role="radiogroup" aria-labelledby="step-size" className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+          <div role="radiogroup" aria-labelledby="step-size" className={`mt-3 grid gap-2 sm:gap-3 ${bundles.length > 6 ? "grid-cols-4" : "grid-cols-3"}`}>
             {bundles.map((b) => {
               const selected = b.slug === bundle.slug;
               return (
@@ -175,7 +175,9 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                     {b.photoSlots}
                   </span>
                   <span className="mt-2 text-sm font-bold text-stone-800">{formatEGP(b.price)}</span>
-                  <span className="text-xs text-stone-500">{perPiece(b.price, b.photoSlots)} EGP each</span>
+                  <span className="text-xs text-stone-500">
+                    {b.photoSlots === 1 ? "single" : `${perPiece(b.price, b.photoSlots)} EGP each`}
+                  </span>
                 </button>
               );
             })}
@@ -226,7 +228,9 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                 <circle cx="9" cy="10" r="1.8" />
                 <path d="m21 16-5-5-8 8" />
               </svg>
-              <span className="text-base font-semibold text-brand">Choose {slots} photos from your phone</span>
+              <span className="text-base font-semibold text-brand">
+                Choose {slots === 1 ? "your photo" : `${slots} photos`} from your phone
+              </span>
               <span className="text-sm text-stone-500">You can select them all at once · JPG, PNG or HEIC</span>
             </button>
           ) : (
@@ -329,6 +333,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         {line && (
           <p className="mt-3 text-xs text-stone-500">
             Tip: we print each photo as a {line.size}, centred. Faces in the middle of the photo come out best.
+            {line.note && <span className="mt-1 block font-semibold text-brand">{line.note}</span>}
           </p>
         )}
 

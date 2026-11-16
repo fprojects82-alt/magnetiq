@@ -8,9 +8,13 @@ Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma and MongoDB
 ## Features
 
 **Storefront**
-- Two print lines from the price sheets, each in bundles of 6 / 8 / 12 / 15 / 20 / 28 photos:
-  - **Pressed Prints**: 5 x 5 cm rounded squares, 5 pressed layers (270–960 EGP)
-  - **Flat Prints**: 7 x 10 cm polaroid-style, 2 layers (200–560 EGP)
+- Three product lines from the price sheets, each sold singly or in bundles:
+  - **Pressed Magnets**: 5 x 5 cm rounded squares, 5 pressed layers. 1 for 50 EGP;
+    6 / 8 / 12 / 15 / 20 / 28 for 270–960 EGP
+  - **Flat Magnets**: 7 x 10 cm polaroid-style, 2 layers. 1 for 35 EGP;
+    6 / 8 / 12 / 15 / 20 / 28 for 200–560 EGP
+  - **3D Stickers**: 3 x 3 cm domed stickers (any size on request).
+    1 / 3 / 5 / 10 / 15 / 20 / 50 / 100 for 50–3,500 EGP
 - Event cards with a photo magnet (engagement, save-the-date, proposal, wedding)
 - One-page bundle builder: pick a size, select all photos at once, order. Phone photos
   (incl. large / HEIC) are resized to JPEG in the browser before upload
