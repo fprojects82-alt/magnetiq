@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
   const startOfMonth = new Date(startOfToday);
   startOfMonth.setDate(1);
 
-  const [orders, newCardRequests] = await Promise.all([
+  const [orders, newCardRequests, cardRequests] = await Promise.all([
     db.order.findMany({
       where: { status: { not: "CANCELLED" } },
       select: {
@@ -34,15 +34,24 @@ export default async function AdminDashboardPage() {
       orderBy: { createdAt: "desc" },
     }),
     db.cardRequest.count({ where: { status: "NEW" } }),
+    db.cardRequest.findMany({
+      where: { status: { not: "CANCELLED" } },
+      select: { quotedPrice: true, paidAt: true },
+    }),
   ]);
 
   const paid = orders.filter((o) => o.paidAt);
   const sum = (list: typeof orders) => list.reduce((s, o) => s + o.total, 0);
+  // Event card requests count once the admin enters a price; income once marked paid.
+  const quoted = cardRequests.filter((c) => c.quotedPrice != null);
+  const paidCards = quoted.filter((c) => c.paidAt);
+  const cardSum = (list: typeof quoted) => list.reduce((s, c) => s + (c.quotedPrice ?? 0), 0);
+  const cardIncome = cardSum(paidCards);
   const income = {
-    total: sum(paid),
-    month: sum(paid.filter((o) => o.paidAt! >= startOfMonth)),
-    today: sum(paid.filter((o) => o.paidAt! >= startOfToday)),
-    awaiting: sum(orders.filter((o) => !o.paidAt)),
+    total: sum(paid) + cardIncome,
+    month: sum(paid.filter((o) => o.paidAt! >= startOfMonth)) + cardSum(paidCards.filter((c) => c.paidAt! >= startOfMonth)),
+    today: sum(paid.filter((o) => o.paidAt! >= startOfToday)) + cardSum(paidCards.filter((c) => c.paidAt! >= startOfToday)),
+    awaiting: sum(orders.filter((o) => !o.paidAt)) + cardSum(quoted.filter((c) => !c.paidAt)),
   };
   const toCheck = orders.filter((o) => !o.paidAt && o.paymentProofUrl);
   const newOrders = orders.filter((o) => o.status === "PENDING");
@@ -55,6 +64,8 @@ export default async function AdminDashboardPage() {
     { label: "Waiting for payment", value: formatEGP(income.awaiting), tone: "text-amber-700" },
     { label: "Orders today", value: ordersToday, tone: "text-brand" },
     { label: "Paid orders", value: `${paid.length} / ${orders.length}`, tone: "text-brand" },
+    { label: "Event cards income (paid)", value: formatEGP(cardIncome), tone: "text-green-700" },
+    { label: "Paid card requests", value: `${paidCards.length} / ${quoted.length} quoted`, tone: "text-brand" },
   ];
 
   return (
@@ -99,7 +110,9 @@ export default async function AdminDashboardPage() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-stone-400">Income counts orders you marked as paid. Cancelled orders are excluded.</p>
+      <p className="mt-2 text-xs text-stone-400">
+        Income counts orders you marked as paid, plus event card requests marked paid (using the price you entered). Cancelled ones are excluded.
+      </p>
 
       <div className="card-surface mt-8 p-4 sm:p-6">
         <div className="flex items-center justify-between">

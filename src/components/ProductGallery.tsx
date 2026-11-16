@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/context/LangContext";
 
 export function ProductGallery({ images }: { images: { src: string; alt: string }[] }) {
   const [index, setIndex] = useState(0);
+  const { t } = useLang();
   const current = images[index] ?? images[0];
   if (!current) return null;
 
@@ -13,14 +15,14 @@ export function ProductGallery({ images }: { images: { src: string; alt: string 
         <img src={current.src} alt={current.alt} className="absolute inset-0 h-full w-full object-cover" />
       </div>
       {images.length > 1 && (
-        <div className="mt-2 flex gap-2 sm:mt-3" role="tablist" aria-label="Product photos">
+        <div className="mt-2 flex gap-2 sm:mt-3" role="tablist" aria-label={t.shop.photos}>
           {images.map((img, i) => (
             <button
               key={img.src + i}
               type="button"
               role="tab"
               aria-selected={i === index}
-              aria-label={`Show photo ${i + 1}: ${img.alt}`}
+              aria-label={`${t.shop.showPhoto(i + 1)}: ${img.alt}`}
               onClick={() => setIndex(i)}
               className={`h-12 w-12 overflow-hidden rounded-lg border-2 transition sm:h-20 sm:w-20 sm:rounded-xl ${
                 i === index ? "border-brand" : "border-transparent opacity-70 hover:opacity-100"

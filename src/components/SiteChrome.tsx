@@ -6,6 +6,7 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { OfferTicker } from "./OfferTicker";
 import { WhatsAppButton } from "./WhatsAppButton";
+import { useLang } from "@/context/LangContext";
 
 export function SiteChrome({
   whatsappNumber,
@@ -19,6 +20,7 @@ export function SiteChrome({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const { lang, t } = useLang();
   const isAdmin = pathname?.startsWith("/admin");
 
   if (isAdmin) return <>{children}</>;
@@ -35,8 +37,8 @@ export function SiteChrome({
       <main id="main" className="min-h-screen">
         {children}
       </main>
-      <Footer whatsappNumber={whatsappNumber} />
-      {whatsappNumber && pathname !== "/checkout" && <WhatsAppButton number={whatsappNumber} raised={hasStickyBar} />}
+      <Footer whatsappNumber={whatsappNumber} lang={lang} />
+      {whatsappNumber && pathname !== "/checkout" && <WhatsAppButton number={whatsappNumber} raised={hasStickyBar} greeting={t.footer.waGreeting} label={t.footer.waAria} />}
     </>
   );
 }

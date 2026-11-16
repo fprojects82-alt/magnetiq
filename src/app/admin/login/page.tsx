@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
   const [state, formAction] = useFormState(login, initialState);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-cream px-4">
+    <div dir="ltr" lang="en" className="flex min-h-screen items-center justify-center bg-brand-cream px-4">
       <div className="card-surface w-full max-w-sm p-8">
         <div className="flex justify-center">
           <Logo />

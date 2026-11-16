@@ -5,7 +5,15 @@ const PASSTHROUGH_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const PASSTHROUGH_MAX_BYTES = 1.5 * 1024 * 1024;
 const MAX_INPUT_BYTES = 30 * 1024 * 1024;
 
+import { getDict } from "./i18n";
+
 export class UploadError extends Error {}
+
+/** Upload messages follow the page language (set on <html lang>). */
+function msg() {
+  const lang = typeof document !== "undefined" && document.documentElement.lang === "ar" ? "ar" : "en";
+  return getDict(lang).upload;
+}
 
 async function decode(file: File): Promise<ImageBitmap | HTMLImageElement> {
   if ("createImageBitmap" in window) {
@@ -34,11 +42,11 @@ async function decode(file: File): Promise<ImageBitmap | HTMLImageElement> {
  */
 export async function prepareImage(file: File): Promise<Blob> {
   if (file.size > MAX_INPUT_BYTES) {
-    throw new UploadError("This photo is too large (max 30 MB).");
+    throw new UploadError(msg().tooLarge);
   }
   const looksLikeImage = file.type.startsWith("image/") || /\.(heic|heif|jpe?g|png|webp)$/i.test(file.name);
   if (!looksLikeImage) {
-    throw new UploadError("That file isn't a photo. Please choose a JPG, PNG or HEIC image.");
+    throw new UploadError(msg().notPhoto);
   }
   if (PASSTHROUGH_TYPES.includes(file.type) && file.size <= PASSTHROUGH_MAX_BYTES) {
     return file;
@@ -49,9 +57,7 @@ export async function prepareImage(file: File): Promise<Blob> {
     source = await decode(file);
   } catch {
     if (PASSTHROUGH_TYPES.includes(file.type) && file.size <= 10 * 1024 * 1024) return file;
-    throw new UploadError(
-      "Your browser can't open this photo format. Try a JPG/PNG, or send it to us on WhatsApp."
-    );
+    throw new UploadError(msg().cantOpen);
   }
 
   const w = "naturalWidth" in source ? source.naturalWidth : source.width;
@@ -68,7 +74,7 @@ export async function prepareImage(file: File): Promise<Blob> {
   if ("close" in source) source.close();
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
-  if (!blob) throw new UploadError("Couldn't process this photo. Please try another one.");
+  if (!blob) throw new UploadError(msg().cantProcess);
   return blob;
 }
 
@@ -82,11 +88,11 @@ export async function uploadPhoto(file: File): Promise<string> {
   try {
     res = await fetch("/api/upload", { method: "POST", body: formData });
   } catch {
-    throw new UploadError("No connection. Check your internet and tap retry.");
+    throw new UploadError(msg().offline);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok || typeof data.url !== "string") {
-    throw new UploadError(data.error || "Upload failed. Please try again.");
+    throw new UploadError(document.documentElement.lang === "ar" ? msg().failed : data.error || msg().failed);
   }
   return data.url;
 }

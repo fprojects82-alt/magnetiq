@@ -41,6 +41,8 @@ export interface EventCardText {
   message?: string;
   /** Customer chose to send (some of) their photos on WhatsApp after ordering. */
   photosLater?: boolean;
+  /** Magnetic bookmark design choices. */
+  bookmark?: { shape: string; color: string; quote?: string };
 }
 
 export interface CartItem {

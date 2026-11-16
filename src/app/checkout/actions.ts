@@ -6,6 +6,28 @@ import { getCustomerSession } from "@/lib/auth";
 import { generateOrderNumber, findValidCoupon, isAllowedUploadUrl, normalizePhone } from "@/lib/orders";
 import { CartItem } from "@/lib/types";
 import { getZone } from "@/lib/shipping";
+import { getLang } from "@/lib/i18n-server";
+
+// Server messages in the customer's language.
+const AR: Record<string, string> = {
+  "Please enter your full name.": "من فضلك اكتب اسمك بالكامل.",
+  "Please enter your phone number.": "من فضلك اكتب رقم موبايلك.",
+  "Please enter your full address (street, building, apartment).": "من فضلك اكتب عنوانك بالكامل (الشارع، العمارة، الشقة).",
+  "Please enter your city / area.": "من فضلك اكتب المدينة / المنطقة.",
+  "Please choose your delivery zone.": "من فضلك اختار منطقة التوصيل.",
+  "Please check your details.": "من فضلك راجع بياناتك.",
+  "Please enter a valid phone number, e.g. 01012345678.": "من فضلك اكتب رقم موبايل صحيح، مثلاً 01012345678.",
+  "Your cart is empty.": "سلتك فاضية.",
+  "Too many items in one order. Please split it or message us on WhatsApp.": "منتجات كتير أوي في طلب واحد. قسّمه أو كلمنا على واتساب.",
+  "Something in your cart looks wrong. Please remove it and add it again.": "في حاجة غلط في سلتك. احذفها وضيفها تاني.",
+  "We couldn't place your order right now. Please try again, or message us on WhatsApp.": "مقدرناش نسجّل طلبك دلوقتي. جرّب تاني، أو كلمنا على واتساب."
+};
+function tr(en: string): string {
+  return getLang() === "ar" ? AR[en] ?? en : en;
+}
+function trT(en: string, ar: string): string {
+  return getLang() === "ar" ? ar : en;
+}
 
 const checkoutSchema = z.object({
   customerName: z.string().trim().min(2, "Please enter your full name.").max(100),
@@ -33,6 +55,13 @@ const cartItemSchema = z.object({
       eventDate: shortText,
       message: z.string().trim().max(500).optional(),
       photosLater: z.boolean().optional(),
+      bookmark: z
+        .object({
+          shape: z.enum(["classic", "arch", "heart", "ornament"]),
+          color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+          quote: z.string().trim().max(120).optional(),
+        })
+        .optional(),
     })
     .optional(),
 });
@@ -57,22 +86,22 @@ export async function createOrder(
 ): Promise<CheckoutResult> {
   const parsed = checkoutSchema.safeParse(formInput);
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message || "Please check your details." };
+    return { success: false, message: tr(parsed.error.issues[0]?.message || "Please check your details.") };
   }
   const phone = normalizePhone(parsed.data.phone);
   if (!phone) {
-    return { success: false, message: "Please enter a valid phone number, e.g. 01012345678." };
+    return { success: false, message: tr("Please enter a valid phone number, e.g. 01012345678.") };
   }
   if (!Array.isArray(items) || items.length === 0) {
-    return { success: false, message: "Your cart is empty." };
+    return { success: false, message: tr("Your cart is empty.") };
   }
   if (items.length > 50) {
-    return { success: false, message: "Too many items in one order. Please split it or message us on WhatsApp." };
+    return { success: false, message: tr("Too many items in one order. Please split it or message us on WhatsApp.") };
   }
   // Delivery is priced by zone (src/lib/shipping.ts), always on the server.
   const zone = getZone(parsed.data.zone);
   if (!zone) {
-    return { success: false, message: "Please choose your delivery zone." };
+    return { success: false, message: tr("Please choose your delivery zone.") };
   }
   // All orders are paid in advance by InstaPay.
   const paymentMethod = "INSTAPAY";
@@ -95,7 +124,7 @@ export async function createOrder(
     for (const raw of items) {
       const itemParsed = cartItemSchema.safeParse(raw);
       if (!itemParsed.success) {
-        return { success: false, message: "Something in your cart looks wrong. Please remove it and add it again." };
+        return { success: false, message: tr("Something in your cart looks wrong. Please remove it and add it again.") };
       }
       const item = itemParsed.data;
       const quantity = Math.max(1, Math.min(500, Math.floor(item.quantity) || 1));
@@ -104,7 +133,7 @@ export async function createOrder(
       // ones our upload endpoint produced (blocks javascript: and other schemes).
       const photos = item.uploadedImageUrls.filter(isAllowedUploadUrl);
       if (photos.length !== item.uploadedImageUrls.length) {
-        return { success: false, message: `Please re-upload the photos for "${item.name}".` };
+        return { success: false, message: trT(`Please re-upload the photos for "${item.name}".`, "من فضلك ارفع الصور تاني.") };
       }
 
       let unitPrice: number;
@@ -114,7 +143,7 @@ export async function createOrder(
       if (item.kind === "product") {
         const product = await db.product.findUnique({ where: { id: item.id } });
         if (!product || !product.active) {
-          return { success: false, message: `"${item.name}" is no longer available. Please remove it from your cart.` };
+          return { success: false, message: trT(`"${item.name}" is no longer available. Please remove it from your cart.`, "المنتج ده مبقاش متاح. من فضلك احذفه من السلة.") };
         }
         unitPrice = product.price;
         name = product.name;
@@ -122,7 +151,7 @@ export async function createOrder(
       } else {
         const pkg = await db.package.findUnique({ where: { id: item.id } });
         if (!pkg || !pkg.active) {
-          return { success: false, message: `"${item.name}" is no longer available. Please remove it from your cart.` };
+          return { success: false, message: trT(`"${item.name}" is no longer available. Please remove it from your cart.`, "المنتج ده مبقاش متاح. من فضلك احذفه من السلة.") };
         }
         unitPrice = pkg.price;
         name = pkg.name;
@@ -131,10 +160,15 @@ export async function createOrder(
 
       const photosLater = Boolean(item.customText?.photosLater);
       if (photos.length > slots) {
-        return { success: false, message: `"${name}" has more photos than it holds. Please edit it and try again.` };
+        return { success: false, message: trT(`"${name}" has more photos than it holds. Please edit it and try again.`, "في صور أكتر من العدد المطلوب. عدّل الطلب وجرّب تاني.") };
       }
-      if (photos.length < slots && !photosLater) {
-        return { success: false, message: `"${name}" is missing photos. Add them, or choose to send them on WhatsApp.` };
+      // Bookmarks can be a colour + quote with no photo; one design covers the whole set.
+      const isBookmark = Boolean(item.customText?.bookmark);
+      if (isBookmark && photos.length === 0 && !item.customText?.bookmark?.quote) {
+        return { success: false, message: trT(`"${name}" needs a design, photo or quote.`, "فاصل الكتاب محتاج تصميم أو صورة أو اقتباس.") };
+      }
+      if (photos.length < slots && !photosLater && !isBookmark) {
+        return { success: false, message: trT(`"${name}" is missing photos. Add them, or choose to send them on WhatsApp.`, "في صور ناقصة. ضيفها، أو اختار تبعتها على واتساب.") };
       }
 
       subtotal += unitPrice * quantity;
@@ -210,7 +244,7 @@ export async function createOrder(
     console.error("createOrder failed", err);
     return {
       success: false,
-      message: "We couldn't place your order right now. Please try again, or message us on WhatsApp.",
+      message: tr("We couldn't place your order right now. Please try again, or message us on WhatsApp."),
     };
   }
 }

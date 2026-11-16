@@ -50,7 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!(await getAdmin())) redirect("/admin/login");
   const badges = await getBadges();
   return (
-    <div className="flex min-h-screen bg-brand-cream">
+    <div dir="ltr" lang="en" className="flex min-h-screen bg-brand-cream">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-stone-200 bg-white p-4 sm:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
           <img src="/logo-red.png" alt="Magnetiq" className="h-8 w-auto" />

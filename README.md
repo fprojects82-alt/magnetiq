@@ -8,6 +8,10 @@ Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma and MongoDB
 ## Features
 
 **Storefront**
+- English / Arabic (عربي) switch in the header: Arabic renders right-to-left with the Cairo font.
+  All shop text lives in `src/lib/i18n.ts`; the admin panel stays English
+- Step-by-step InstaPay payment: details → total → copy number & send money → upload screenshot → confirm
+- Magnetic bookmark designer: shape, colour (wheel or code), quote, optional design image, live preview
 - Four product lines from the price sheets, each sold singly or in bundles:
   - **Pressed Magnets**: 5 x 5 cm rounded squares, 5 pressed layers. 1 for 50 EGP;
     6 / 8 / 12 / 15 / 20 / 28 for 270–960 EGP

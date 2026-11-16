@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SOCIAL_LINKS } from "@/lib/catalog";
+import { getDict, Lang } from "@/lib/i18n";
 import { WhatsAppIcon } from "./WhatsAppButton";
 
 export function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
@@ -28,30 +29,31 @@ export function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) 
   );
 }
 
-export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
+export function Footer({ whatsappNumber, lang = "en" }: { whatsappNumber: string; lang?: Lang }) {
+  const t = getDict(lang).footer;
   return (
     <footer className="mt-12 bg-brand-dark text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
         <div>
           <img src="/logo-white.png" alt="Magnetiq — Moments That Stick" className="h-16 w-auto" />
           <p className="mt-1 text-sm text-white/80">
-            Custom photo magnets, 3D stickers and event cards, delivered all over Egypt.
+            {t.about}
           </p>
         </div>
         <div>
-          <h2 className="mb-3 font-semibold">Shop</h2>
+          <h2 className="mb-3 font-semibold">{t.shop}</h2>
           <ul className="space-y-1 text-sm text-white/85 [&_a]:inline-block [&_a]:py-1.5">
-            <li><Link href="/shop/pressed" className="hover:underline">Pressed magnets (5 × 5 cm)</Link></li>
-            <li><Link href="/shop/flat" className="hover:underline">Flat magnets (7 × 10 cm)</Link></li>
-            <li><Link href="/shop/stickers" className="hover:underline">3D stickers (3 × 3 cm)</Link></li>
-            <li><Link href="/shop/bookmarks" className="hover:underline">Magnetic bookmarks</Link></li>
-            <li><Link href="/event-cards" className="hover:underline">Event cards</Link></li>
-            <li><Link href="/cart" className="hover:underline">Your cart</Link></li>
-            <li><Link href="/track" className="hover:underline">Track your order</Link></li>
+            <li><Link href="/shop/pressed" className="hover:underline">{t.pressed}</Link></li>
+            <li><Link href="/shop/flat" className="hover:underline">{t.flat}</Link></li>
+            <li><Link href="/shop/stickers" className="hover:underline">{t.stickers}</Link></li>
+            <li><Link href="/shop/bookmarks" className="hover:underline">{t.bookmarks}</Link></li>
+            <li><Link href="/event-cards" className="hover:underline">{t.cards}</Link></li>
+            <li><Link href="/cart" className="hover:underline">{t.cart}</Link></li>
+            <li><Link href="/track" className="hover:underline">{t.track}</Link></li>
           </ul>
         </div>
         <div>
-          <h2 className="mb-3 font-semibold">Talk to us</h2>
+          <h2 className="mb-3 font-semibold">{t.talk}</h2>
           <ul className="space-y-1 text-sm [&_a]:py-1.5">
             {whatsappNumber && (
               <li>
@@ -79,7 +81,7 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
         </div>
       </div>
       <div className="border-t border-white/15 py-4 text-center text-xs text-white/60">
-        © {new Date().getFullYear()} Magnetiq. All rights reserved.
+        © {new Date().getFullYear()} Magnetiq. {t.rights}
       </div>
     </footer>
   );

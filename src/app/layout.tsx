@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Great_Vibes, Playfair_Display } from "next/font/google";
+import { Poppins, Great_Vibes, Playfair_Display, Cairo } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { SiteChrome } from "@/components/SiteChrome";
@@ -7,7 +7,10 @@ import { getSettings } from "@/lib/settings";
 import { getCustomerSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ensureCatalog } from "@/lib/catalogSync";
-import { DEFAULT_WHATSAPP } from "@/lib/catalogData";
+import { DEFAULT_WHATSAPP, OFFERS_AR } from "@/lib/catalogData";
+import { getLang } from "@/lib/i18n-server";
+import { getDict } from "@/lib/i18n";
+import { LangProvider } from "@/context/LangContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,6 +22,13 @@ const greatVibes = Great_Vibes({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-script",
+});
+
+// Arabic text (Poppins and Playfair have no Arabic glyphs).
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-arabic",
 });
 
 const playfair = Playfair_Display({
@@ -58,7 +68,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-async function loadChromeData() {
+async function loadChromeData(lang: "en" | "ar") {
   // The header/footer must never take the whole site down if the database is
   // briefly unreachable, so fall back to env defaults instead of throwing.
   await ensureCatalog();
@@ -71,28 +81,35 @@ async function loadChromeData() {
   ]);
   return {
     whatsappNumber: settings?.whatsappNumber ?? process.env.WHATSAPP_NUMBER ?? DEFAULT_WHATSAPP,
-    offerItems: offers.map((o) => [o.badgeText, o.title].filter(Boolean).join("  ·  ")),
+    offerItems: offers.map((o) => {
+      const ar = lang === "ar" ? OFFERS_AR[o.title] : undefined;
+      return (ar ? [ar.badgeText, ar.title] : [o.badgeText, o.title]).filter(Boolean).join("  ·  ");
+    }),
     customerName: customerSession?.name ?? null,
   };
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { whatsappNumber, offerItems, customerName } = await loadChromeData();
+  const lang = getLang();
+  const t = getDict(lang);
+  const { whatsappNumber, offerItems, customerName } = await loadChromeData(lang);
 
   return (
-    <html lang="en">
-      <body className={`${poppins.variable} ${greatVibes.variable} ${playfair.variable} font-sans antialiased`}>
+    <html lang={lang} dir={t.dir}>
+      <body className={`${poppins.variable} ${greatVibes.variable} ${playfair.variable} ${cairo.variable} font-sans antialiased`}>
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-brand focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-brand focus:px-4 focus:py-2 focus:text-white"
         >
-          Skip to content
+          {t.common.skip}
         </a>
-        <CartProvider>
-          <SiteChrome whatsappNumber={whatsappNumber} offerItems={offerItems} customerName={customerName}>
-            {children}
-          </SiteChrome>
-        </CartProvider>
+        <LangProvider lang={lang}>
+          <CartProvider>
+            <SiteChrome whatsappNumber={whatsappNumber} offerItems={offerItems} customerName={customerName}>
+              {children}
+            </SiteChrome>
+          </CartProvider>
+        </LangProvider>
       </body>
     </html>
   );

@@ -3,13 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { formatEGP } from "@/lib/currency";
+import { useLang } from "@/context/LangContext";
+import { bundleLabel, lineForSlug, lineText } from "@/lib/catalog";
 import { BackButton } from "./BackButton";
 import { QuantityStepper } from "./QuantityStepper";
 import { MAX_SHIPPING, MIN_SHIPPING } from "@/lib/shipping";
 
 export function CartPageClient() {
   const { items, removeItem, updateQuantity, subtotal, coupon, applyCoupon, clearCoupon, discount, isHydrated } = useCart();
+  const { lang, t, fmt: formatEGP } = useLang();
+  const c = t.cart;
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [applying, setApplying] = useState(false);
@@ -27,9 +30,9 @@ export function CartPageClient() {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <img src="/media/pressed-couples.webp" alt="" className="mx-auto h-40 w-40 rotate-[-4deg] rounded-3xl object-cover shadow-lg" />
-        <h1 className="mt-6 text-2xl font-bold text-stone-800">Your cart is empty</h1>
-        <p className="mt-2 text-stone-500">Turn your favourite photos into magnets. It only takes a minute.</p>
-        <Link href="/packages" className="btn-primary mt-6">Choose your magnets</Link>
+        <h1 className="mt-6 text-2xl font-bold text-stone-800">{c.empty}</h1>
+        <p className="mt-2 text-stone-500">{c.emptySub}</p>
+        <Link href="/packages" className="btn-primary mt-6">{c.choose}</Link>
       </div>
     );
   }
@@ -48,10 +51,10 @@ export function CartPageClient() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <BackButton />
-      <h1 className="text-3xl font-bold text-stone-800">Your cart</h1>
+      <h1 className="text-3xl font-bold text-stone-800">{c.title}</h1>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <ul className="space-y-4" aria-label="Cart items">
+        <ul className="space-y-4" aria-label={c.title}>
           {items.map((item) => {
             const photos = item.uploadedImageUrls;
             return (
@@ -59,7 +62,7 @@ export function CartPageClient() {
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-brand-cream">
                   <img src={photos[0] || item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   {photos.length > 1 && (
-                    <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 text-[10px] font-semibold text-white">
+                    <span className="absolute bottom-1 end-1 rounded-full bg-black/70 px-1.5 text-[10px] font-semibold text-white">
                       +{photos.length - 1}
                     </span>
                   )}
@@ -67,8 +70,15 @@ export function CartPageClient() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h2 className="font-semibold text-stone-800">{item.name}</h2>
-                      {item.size && <p className="text-xs text-stone-500">{item.size}</p>}
+                      <h2 className="font-semibold text-stone-800">{bundleLabel(item.slug, item.name, lang)}</h2>
+                      {item.size && (
+                        <p className="text-xs text-stone-500">
+                          {(() => {
+                            const l = lineForSlug(item.slug);
+                            return l ? lineText(l, lang).size : item.size;
+                          })()}
+                        </p>
+                      )}
                       {item.customText?.names && (
                         <p className="text-xs text-stone-500">
                           {item.customText.names}
@@ -76,17 +86,17 @@ export function CartPageClient() {
                         </p>
                       )}
                       <p className="text-xs text-stone-500">
-                        {photos.length} photo{photos.length === 1 ? "" : "s"} uploaded
-                        {item.customText?.photosLater && <span className="font-semibold text-amber-700"> · rest via WhatsApp</span>}
+                        {c.photosUploaded(photos.length)}
+                        {item.customText?.photosLater && <span className="font-semibold text-amber-700">{c.restWhatsapp}</span>}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeItem(item.key)}
                       className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-stone-500 hover:bg-red-50 hover:text-red-600"
-                      aria-label={`Remove ${item.name} from cart`}
+                      aria-label={c.removeItem(bundleLabel(item.slug, item.name, lang))}
                     >
-                      Remove
+                      {t.common.remove}
                     </button>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
@@ -103,24 +113,24 @@ export function CartPageClient() {
           })}
           <li>
             <Link href="/packages" className="text-sm font-semibold text-brand hover:underline">
-              + Add more magnets
+              {c.addMore}
             </Link>
           </li>
         </ul>
 
         <div className="card-surface h-fit p-5 lg:sticky lg:top-24">
           <form onSubmit={handleApplyCoupon} className="flex gap-2">
-            <label htmlFor="coupon" className="sr-only">Coupon code</label>
+            <label htmlFor="coupon" className="sr-only">{c.coupon}</label>
             <input
               id="coupon"
               className="input-field uppercase"
-              placeholder="Coupon code"
+              placeholder={c.coupon}
               value={couponInput}
               onChange={(e) => setCouponInput(e.target.value)}
               autoCapitalize="characters"
             />
             <button type="submit" disabled={applying} className="btn-outline min-h-[48px] shrink-0 px-4">
-              {applying ? "…" : "Apply"}
+              {applying ? "…" : c.apply}
             </button>
           </form>
           {couponMessage && (
@@ -138,38 +148,38 @@ export function CartPageClient() {
               }}
               className="mt-1 text-xs text-stone-500 hover:text-red-600"
             >
-              Remove coupon
+              {c.removeCoupon}
             </button>
           )}
 
           <dl className="mt-5 space-y-2 border-t border-stone-100 pt-4 text-sm">
             <div className="flex justify-between text-stone-600">
-              <dt>Subtotal</dt>
+              <dt>{c.subtotal}</dt>
               <dd>{formatEGP(subtotal)}</dd>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-700">
-                <dt>Discount ({coupon?.code})</dt>
+                <dt>{c.discount} ({coupon?.code})</dt>
                 <dd>-{formatEGP(discount)}</dd>
               </div>
             )}
             <div className="flex justify-between text-stone-600">
-              <dt>Delivery</dt>
+              <dt>{c.delivery}</dt>
               <dd className="text-right">
-                {MIN_SHIPPING}–{MAX_SHIPPING} EGP
-                <span className="block text-xs text-stone-400">by zone, at checkout</span>
+                {MIN_SHIPPING}–{MAX_SHIPPING} {t.common.egp}
+                <span className="block text-xs text-stone-400">{c.deliveryLater}</span>
               </dd>
             </div>
             <div className="flex justify-between border-t border-stone-100 pt-2 text-lg font-bold text-stone-800">
-              <dt>Total before delivery</dt>
+              <dt>{c.totalBefore}</dt>
               <dd>{formatEGP(total)}</dd>
             </div>
           </dl>
 
           <Link href="/checkout" className="btn-primary mt-5 w-full">
-            Checkout
+            {c.checkout}
           </Link>
-          <p className="mt-3 text-center text-xs text-stone-500">Pay by InstaPay · No account needed</p>
+          <p className="mt-3 text-center text-xs text-stone-500">{c.note}</p>
         </div>
       </div>
     </div>

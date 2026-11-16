@@ -163,3 +163,10 @@ export const CATALOG_OFFERS = [
 
 /** Offers from earlier versions of the site that should no longer show. */
 export const RETIRED_OFFER_PATTERN = /free delivery|valentine|flat prints/i;
+
+/** Arabic text for the built-in offers (shown in the top banner). Keyed by English title. */
+export const OFFERS_AR: Record<string, { title: string; badgeText: string }> = {
+  "Bundle & save: pressed magnets from 34 EGP each": { title: "وفّر مع المجموعات: مغناطيس مضغوط من ٣٤ ج.م للقطعة", badgeText: "من ٣٤ ج.م" },
+  "Flat magnets: save up to 600 EGP": { title: "مغناطيس مسطح: وفّر لحد ٦٠٠ ج.م", badgeText: "وفّر ٦٠٠" },
+  "New: 3D photo stickers": { title: "جديد: ستيكرز 3D بصورك", badgeText: "جديد" },
+};

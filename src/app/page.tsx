@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { PRINT_LINES, PRINT_LINE_KEYS, SOCIAL_LINKS, shopHref } from "@/lib/catalog";
+import { PRINT_LINES, PRINT_LINE_KEYS, SOCIAL_LINKS, lineText, shopHref } from "@/lib/catalog";
+import { getServerDict } from "@/lib/i18n-server";
+import { money } from "@/lib/i18n";
 import { getLineBundles } from "@/lib/bundles";
-import { formatEGP } from "@/lib/currency";
 import { getSettings } from "@/lib/settings";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Parallax, Reveal } from "@/components/ScrollFX";
@@ -19,38 +20,11 @@ const GALLERY = [
   { src: "/media/stickers-3d.webp", alt: "Glossy 3D photo stickers scattered on a polka-dot background", className: "" },
 ];
 
-const FAQ = [
-  {
-    q: "What's the difference between pressed and flat magnets?",
-    a: "Pressed magnets are 5 × 5 cm rounded squares made of 5 pressed layers (lamination, photo, metal, plastic backing and magnet), so they're thick, glossy and sturdy. Flat magnets are 7 × 10 cm polaroid-style rectangles with 2 layers (photo and magnet). They're lighter and cheaper, and great for covering a whole fridge.",
-  },
-  {
-    q: "What are 3D stickers?",
-    a: "Your photo as a 3 × 3 cm sticker with a glossy raised (domed) finish. They're available in any size. Message us on WhatsApp for a custom size.",
-  },
-  {
-    q: "Can I order just one?",
-    a: "Yes. One pressed magnet is 50 EGP, one flat magnet is 35 EGP, one 3D sticker is 50 EGP and one magnetic bookmark is 45 EGP. Bundles bring the price per photo down a lot.",
-  },
-  {
-    q: "How do I send my photos?",
-    a: "Upload them right on the order page. You can select all of them at once from your phone gallery. If you'd rather, tick \"I'll send my photos on WhatsApp\" and send them to us after you order.",
-  },
-  {
-    q: "How do I pay?",
-    a: "All orders are paid in advance by InstaPay. After you order you get an order number: transfer the total and upload the screenshot on the confirmation page. It goes straight to our team. (Can't upload? You can send it on WhatsApp instead.)",
-  },
-  {
-    q: "Do you deliver outside Cairo?",
-    a: "Yes, we deliver all over Egypt. Delivery costs 55–155 EGP depending on your zone (Alexandria 55, Cairo/Giza 90), and you choose your zone at checkout.",
-  },
-  {
-    q: "Can I mix different photos in one bundle?",
-    a: "Of course. Every magnet in a bundle can be a different photo. That's the whole point!",
-  },
-];
 
 export default async function HomePage() {
+  const { lang, t } = getServerDict();
+  const h = t.home;
+  const fmt = (n: number) => money(n, lang);
   const [lines, settings] = await Promise.all([
     Promise.all(
       PRINT_LINE_KEYS.map(async (key) => ({
@@ -61,8 +35,6 @@ export default async function HomePage() {
     getSettings().catch(() => null),
   ]);
 
-  const fromEach = (bundles: { price: number; photoSlots: number }[]) =>
-    bundles.length ? Math.min(...bundles.map((b) => Math.round(b.price / b.photoSlots))) : null;
   const whatsapp = settings?.whatsappNumber;
   const pressed = lines.find((l) => l.line.key === "PRESSED")?.bundles ?? [];
   const biggestPressed = pressed[pressed.length - 1];
@@ -75,12 +47,11 @@ export default async function HomePage() {
           <div>
             <p className="font-script text-3xl text-brand">Moments That Stick</p>
             <h1 className="mt-2 font-display text-4xl font-extrabold leading-tight text-stone-900 sm:text-6xl">
-              Your favourite photos,{" "}
-              <span className="italic text-brand">on your fridge.</span>
+              {h.h1a}{" "}
+              <span className="italic text-brand">{h.h1b}</span>
             </h1>
             <p className="mt-4 max-w-lg text-lg text-stone-600">
-              Custom photo magnets and 3D stickers made from your phone pictures. Order one or a whole bundle, upload your
-              photos, pay by InstaPay, and we deliver anywhere in Egypt.
+              {h.intro}
             </p>
             <div className="mt-6 flex flex-col flex-wrap gap-3 sm:flex-row">
               {lines.map(({ line, bundles }, i) => {
@@ -91,16 +62,15 @@ export default async function HomePage() {
                     href={shopHref(line, popular?.photoSlots)}
                     className={i === 0 ? "btn-primary text-base" : "btn-outline text-base"}
                   >
-                    {line.name}
+                    {lineText(line, lang).name}
                   </Link>
                 );
               })}
             </div>
             <ul className="mt-6 grid max-w-lg grid-cols-1 gap-x-4 gap-y-1.5 text-sm text-stone-700 sm:grid-cols-2">
-              <li>✓ Delivery all over Egypt</li>
-              <li>✓ Easy payment by InstaPay</li>
-              <li>✓ Upload straight from your phone</li>
-              <li>✓ Every magnet a different photo</li>
+              {h.perks.map((p) => (
+                <li key={p}>✓ {p}</li>
+              ))}
             </ul>
           </div>
 
@@ -122,8 +92,8 @@ export default async function HomePage() {
               />
             </Parallax>
             {biggestPressed && (
-              <span className="absolute -bottom-3 left-4 rotate-[-4deg] rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-brand shadow-lg">
-                {biggestPressed.photoSlots} pressed photos · {formatEGP(biggestPressed.price)}
+              <span className="absolute -bottom-3 start-4 rotate-[-4deg] rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-brand shadow-lg">
+                {h.heroBadge(biggestPressed.photoSlots, fmt(biggestPressed.price))}
               </span>
             )}
           </div>
@@ -133,45 +103,49 @@ export default async function HomePage() {
       {/* CHOOSE STYLE */}
       <section className="mx-auto max-w-6xl px-4 py-10" aria-labelledby="styles-title">
         <Reveal>
-          <h2 id="styles-title" className="section-title text-center">Pick your style</h2>
-          <p className="mt-2 text-center text-stone-600">Order a single piece, or save with a bundle.</p>
+          <h2 id="styles-title" className="section-title text-center">{h.styleTitle}</h2>
+          <p className="mt-2 text-center text-stone-600">{h.styleSub}</p>
         </Reveal>
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {lines.map(({ line, bundles }, i) => {
-            const each = fromEach(bundles);
+            const single = bundles.find((b) => b.photoSlots === 1) ?? bundles[0];
             const popular = bundles.find((b) => b.badge === "Most popular") ?? bundles[0];
+            const lt = lineText(line, lang);
             return (
               <Reveal key={line.key} delay={i * 120}>
                 <article className="card-surface group flex h-full flex-col overflow-hidden">
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <img src={line.cover} alt={line.gallery[0].alt} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                    {each && (
-                      <span className="absolute left-4 top-4 rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-white shadow">
-                        from {each} EGP each
+                    {single && (
+                      <span className="absolute start-4 top-4 rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-white shadow">
+                        {h.fromPrice(fmt(single.price))}
                       </span>
                     )}
                   </div>
                   <div className="flex flex-1 flex-col p-6">
-                    <h3 className="font-display text-2xl font-bold italic text-brand">{line.name}</h3>
+                    <h3 className="font-display text-2xl font-bold italic text-brand">{lt.name}</h3>
                     <p className="mt-1 text-stone-700">
-                      <strong>{line.size}</strong> · {line.layers}
+                      <strong>{lt.size}</strong> · {lt.layers}
                     </p>
-                    <p className="text-sm text-stone-500">{line.layersDetail}</p>
-                    {line.note && <p className="mt-1 text-sm font-semibold text-brand">{line.note}</p>}
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <p className="text-sm text-stone-500">{lt.layersDetail}</p>
+                    {lt.note && <p className="mt-1 text-sm font-semibold text-brand">{lt.note}</p>}
+                    {/* Compact price grid: quantity on top, price below. */}
+                    <div className="mt-4 grid grid-cols-4 gap-1.5">
                       {bundles.map((b) => (
                         <Link
                           key={b.slug}
                           href={shopHref(line, b.photoSlots)}
-                          className="rounded-full border border-brand/30 px-3 py-2 text-sm font-medium text-stone-700 hover:border-brand hover:bg-brand hover:text-white"
+                          className="flex flex-col items-center rounded-xl border border-brand/20 px-1 py-1.5 text-center leading-tight hover:border-brand hover:bg-brand hover:text-white"
                         >
-                          {b.photoSlots} · {formatEGP(b.price)}
+                          <span className="text-sm font-bold">×{b.photoSlots}</span>
+                          <span className="text-[11px] opacity-70">{b.price}</span>
                         </Link>
                       ))}
                     </div>
+                    <p className="mt-1 text-[11px] text-stone-400">{h.pricesIn}</p>
                     <div className="mt-auto pt-6">
                       <Link href={shopHref(line, popular?.photoSlots)} className="btn-primary w-full">
-                        Order {line.name}
+                        {h.orderLine(lt.name)}
                       </Link>
                     </div>
                   </div>
@@ -199,18 +173,15 @@ export default async function HomePage() {
             </Reveal>
             <div>
               <Reveal>
-                <h2 id="cards-title" className="section-title">Event cards with a magnet</h2>
-                <p className="mt-2 text-stone-600">
-                  Engagement, wedding, save the date, proposal or birthday: we print your cards and can add a photo magnet or 3D
-                  sticker on each one, so your guests keep the moment on their fridge.
-                </p>
+                <h2 id="cards-title" className="section-title">{h.cardsTitle}</h2>
+                <p className="mt-2 text-stone-600">{h.cardsText}</p>
                 <ul className="mt-4 space-y-2 text-stone-700">
-                  <li>✓ Send us your design or an example you like</li>
-                  <li>✓ Choose how many cards, with or without magnets</li>
-                  <li>✓ We reply on WhatsApp with the price and a preview</li>
+                  {h.cardsPoints.map((p) => (
+                    <li key={p}>✓ {p}</li>
+                  ))}
                 </ul>
                 <Link href="/event-cards" className="btn-primary mt-6">
-                  Request event cards
+                  {h.cardsCta}
                 </Link>
               </Reveal>
             </div>
@@ -220,14 +191,10 @@ export default async function HomePage() {
       {/* HOW IT WORKS */}
       <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="how-title">
         <Reveal>
-          <h2 id="how-title" className="section-title text-center">Order in 3 easy steps</h2>
+          <h2 id="how-title" className="section-title text-center">{h.stepsTitle}</h2>
         </Reveal>
         <ol className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            { title: "Pick what you love", desc: "Pressed or flat magnets, or 3D stickers. One piece or a bundle: bigger bundles cost less per photo." },
-            { title: "Upload your photos", desc: "Select them all at once from your phone, or send them later on WhatsApp." },
-            { title: "Pay & we deliver", desc: "Pay by InstaPay, send the screenshot, and we print and deliver anywhere in Egypt." },
-          ].map((s, i) => (
+          {h.steps.map((s, i) => (
             <Reveal key={s.title} delay={i * 120}>
               <li className="card-surface flex h-full gap-4 p-6">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-xl font-bold text-white">
@@ -247,8 +214,8 @@ export default async function HomePage() {
       <section id="gallery" className="scroll-mt-24 bg-white py-14" aria-labelledby="gallery-title">
         <div className="mx-auto max-w-6xl px-4">
           <Reveal>
-            <h2 id="gallery-title" className="section-title text-center">Real orders, real fridges</h2>
-            <p className="mt-2 text-center text-stone-600">A few of the moments we&apos;ve turned into magnets.</p>
+            <h2 id="gallery-title" className="section-title text-center">{h.galleryTitle}</h2>
+            <p className="mt-2 text-center text-stone-600">{h.gallerySub}</p>
           </Reveal>
           <div className="mt-8 grid auto-rows-[160px] grid-cols-2 gap-3 sm:auto-rows-[220px] md:grid-cols-4">
             {GALLERY.map((img) => (
@@ -257,13 +224,13 @@ export default async function HomePage() {
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="btn-outline">
-              <InstagramIcon /> More on Instagram
+              <InstagramIcon /> {h.instagram}
             </a>
             <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" className="btn-outline">
-              <FacebookIcon /> Follow on Facebook
+              <FacebookIcon /> {h.facebook}
             </a>
             <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noreferrer" className="btn-outline">
-              <TikTokIcon /> Watch on TikTok
+              <TikTokIcon /> {h.tiktok}
             </a>
           </div>
         </div>
@@ -273,9 +240,9 @@ export default async function HomePage() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-12" aria-labelledby="faq-title">
-        <h2 id="faq-title" className="section-title text-center">Questions?</h2>
+        <h2 id="faq-title" className="section-title text-center">{h.faqTitle}</h2>
         <div className="mt-6 space-y-3">
-          {FAQ.map((item) => (
+          {h.faq.map((item) => (
             <details key={item.q} className="card-surface group p-5 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-stone-800">
                 {item.q}
@@ -288,7 +255,7 @@ export default async function HomePage() {
         {whatsapp && (
           <div className="mt-8 text-center">
             <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer" className="btn-primary bg-[#1f9e4f] hover:bg-[#178a42]">
-              <WhatsAppIcon className="h-5 w-5" /> Ask us on WhatsApp
+              <WhatsAppIcon className="h-5 w-5" /> {h.askWhatsapp}
             </a>
           </div>
         )}

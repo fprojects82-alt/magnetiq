@@ -4,8 +4,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { formatEGP } from "@/lib/currency";
-import { getPrintLine, perPiece } from "@/lib/catalog";
+import { bundleLabel, getPrintLine, lineText, perPiece } from "@/lib/catalog";
+import { useLang } from "@/context/LangContext";
+import { badgeText } from "@/lib/i18n";
+import { BookmarkDesign, BookmarkDesigner, DEFAULT_BOOKMARK, normalizeHex } from "./BookmarkDesigner";
 import { usePhotoUploads } from "@/lib/usePhotoUploads";
 import { CartItem, EventCardText } from "@/lib/types";
 
@@ -30,6 +32,9 @@ interface BundleBuilderProps {
 
 export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderProps) {
   const line = getPrintLine(lineKey);
+  const { lang, t, fmt: formatEGP } = useLang();
+  const tb = t.builder;
+  const lt = line ? lineText(line, lang) : null;
   const router = useRouter();
   const { addItem } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +50,8 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
   // How many prints of each uploaded photo (same photo more than once).
   const [copies, setCopies] = useState<Record<string, number>>({});
   const copiesOf = (id: string) => copies[id] ?? 1;
+  const isBookmark = line?.key === "BOOKMARK";
+  const [design, setDesign] = useState<BookmarkDesign>(DEFAULT_BOOKMARK);
   const [names, setNames] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -84,31 +91,42 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
     const files = Array.from(list);
     const added = addFiles(files);
     if (added < files.length) {
-      setNotice(`You can add up to ${maxSlots} photos. ${files.length - added} weren't added.`);
+      setNotice(tb.maxPhotos(maxSlots, files.length - added));
     } else {
       setNotice(null);
     }
   }
 
-  const canAdd = uploadingCount === 0 && overBy <= 0 && (missing === 0 || photosLater) && errorCount === 0;
+  const bookmarkReady = isBookmark && (printUrls.length > 0 || design.quote.trim() !== "") && Boolean(normalizeHex(design.color));
+  const canAdd =
+    uploadingCount === 0 && overBy <= 0 && errorCount === 0 && (isBookmark ? bookmarkReady : missing === 0 || photosLater);
 
   function validate(): boolean {
     if (uploadingCount > 0) {
-      setError("Please wait for your photos to finish uploading.");
+      setError(tb.errWait);
       return false;
     }
     if (errorCount > 0) {
-      setError("Some photos failed to upload. Tap them to retry, or remove them.");
+      setError(tb.errFailed);
       return false;
     }
     if (overBy > 0) {
-      setError(`This bundle holds ${slots} photos. Remove ${overBy} or choose a bigger bundle.`);
+      setError(tb.errOver(slots, overBy));
       return false;
     }
+    if (isBookmark) {
+      if (!normalizeHex(design.color)) {
+        setError(t.bookmark.errColor);
+        return false;
+      }
+      if (printUrls.length === 0 && !design.quote.trim()) {
+        setError(t.bookmark.errEmpty);
+        return false;
+      }
+      return true;
+    }
     if (missing > 0 && !photosLater) {
-      setError(
-        `Add ${missing} more photo${missing > 1 ? "s" : ""}, or tick "I'll send my photos on WhatsApp".`
-      );
+      setError(tb.errMissing(missing));
       return false;
     }
     return true;
@@ -117,8 +135,9 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
   function handleAdd(goToCheckout: boolean) {
     if (!validate()) return;
     setError(null);
-    const customText: EventCardText | undefined =
-      includesCard || (photosLater && missing > 0)
+    const customText: EventCardText | undefined = isBookmark
+      ? { bookmark: { shape: design.shape, color: normalizeHex(design.color)!, quote: design.quote.trim() || undefined } }
+      : includesCard || (photosLater && missing > 0)
         ? {
             ...(includesCard ? { names, eventDate } : {}),
             ...(photosLater && missing > 0 ? { photosLater: true } : {}),
@@ -147,6 +166,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
     clear();
     setCopies({});
     setPhotosLater(false);
+    setDesign(DEFAULT_BOOKMARK);
   }
 
   const saving = bundle.compareAtPrice && bundle.compareAtPrice > bundle.price ? bundle.compareAtPrice - bundle.price : 0;
@@ -158,7 +178,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
       {bundles.length > 1 && (
         <section aria-labelledby="step-size">
           <h2 id="step-size" className="step-title">
-            <span className="step-num">1</span> How many photos?
+            <span className="step-num">1</span> {tb.howMany}
           </h2>
           <div role="radiogroup" aria-labelledby="step-size" className={`mt-3 grid grid-cols-3 gap-2 sm:gap-3 ${bundles.length > 6 ? "sm:grid-cols-4" : ""}`}>
             {bundles.map((b) => {
@@ -176,7 +196,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                 >
                   {b.badge && (
                     <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                      {b.badge}
+                      {badgeText(b.badge, lang)}
                     </span>
                   )}
                   <span
@@ -188,7 +208,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                   </span>
                   <span className="mt-2 text-sm font-bold text-stone-800">{formatEGP(b.price)}</span>
                   <span className="text-xs text-stone-500">
-                    {b.photoSlots === 1 ? "single" : `${perPiece(b.price, b.photoSlots)} EGP each`}
+                    {b.photoSlots === 1 ? t.common.single : `${formatEGP(perPiece(b.price, b.photoSlots))} ${t.common.each}`}
                   </span>
                 </button>
               );
@@ -197,17 +217,22 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         </section>
       )}
 
-      {/* Step 2 — photos */}
+      {isBookmark && (
+        <BookmarkDesigner value={design} onChange={setDesign} photo={entries.find((e) => e.status !== "error")?.preview ?? null} />
+      )}
+
+      {/* Photos (for bookmarks: an optional design image) */}
       <section aria-labelledby={photosHeadingId} className="mt-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 id={photosHeadingId} className="step-title">
-            <span className="step-num">{bundles.length > 1 ? 2 : 1}</span> Add your photos
+            <span className="step-num">{isBookmark ? 3 : bundles.length > 1 ? 2 : 1}</span>{" "}
+            {isBookmark ? t.bookmark.photosTitle : tb.addPhotos}
           </h2>
-          <p className={`text-sm font-semibold ${overBy > 0 ? "text-red-600" : count === slots ? "text-green-700" : "text-stone-600"}`} aria-live="polite">
-            {count} / {slots} photos
+          <p className={`text-sm font-semibold ${isBookmark ? "hidden" : ""} ${overBy > 0 ? "text-red-600" : count === slots ? "text-green-700" : "text-stone-600"}`} aria-live="polite">
+            {tb.counter(count, slots)}
           </p>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-200" aria-hidden>
+        <div className={`mt-2 h-2 overflow-hidden rounded-full bg-stone-200 ${isBookmark ? "hidden" : ""}`} aria-hidden>
           <div
             className={`h-full rounded-full transition-all ${overBy > 0 ? "bg-red-500" : "bg-brand"}`}
             style={{ width: `${Math.min(100, (count / slots) * 100)}%` }}
@@ -240,13 +265,11 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                 <circle cx="9" cy="10" r="1.8" />
                 <path d="m21 16-5-5-8 8" />
               </svg>
-              <span className="text-base font-semibold text-brand">
-                Choose {slots === 1 ? "your photo" : `${slots} photos`} from your phone
-              </span>
-              <span className="text-sm text-stone-500">You can select them all at once · JPG, PNG or HEIC</span>
+              <span className="text-base font-semibold text-brand">{tb.chooseFromPhone(slots)}</span>
+              <span className="text-sm text-stone-500">{tb.selectAll}</span>
             </button>
           ) : (
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-label="Your photos">
+            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-label={tb.yourPhotos}>
               {entries.map((entry, i) => {
                 const before = entries.slice(0, i).reduce((sum, e) => sum + copiesOf(e.id), 0);
                 const n = copiesOf(entry.id);
@@ -261,13 +284,13 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                     >
                       <img
                         src={entry.preview}
-                        alt={`Photo ${i + 1}`}
+                        alt={tb.photo(i + 1)}
                         className={`h-full w-full object-cover ${line?.key === "FLAT" ? "rounded-sm" : "rounded-lg"}`}
                       />
                       {entry.status === "uploading" && (
                         <span className="absolute inset-0 flex items-center justify-center bg-white/60">
                           <span className="h-7 w-7 animate-spin rounded-full border-4 border-brand/20 border-t-brand" aria-hidden />
-                          <span className="sr-only">Uploading photo {i + 1}</span>
+                          <span className="sr-only">{tb.uploadingPhoto(i + 1)}</span>
                         </span>
                       )}
                       {entry.status === "error" && (
@@ -277,12 +300,12 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                           className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-red-600/80 p-1 text-center text-[11px] font-semibold text-white"
                           title={entry.error}
                         >
-                          <span aria-hidden>↻</span> Retry
+                          <span aria-hidden>↻</span> {t.common.retry}
                           <span className="sr-only">: {entry.error}</span>
                         </button>
                       )}
                       {entry.status === "done" && (
-                        <span className="absolute bottom-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-600 text-[11px] text-white" aria-hidden>
+                        <span className="absolute bottom-1 start-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-600 text-[11px] text-white" aria-hidden>
                           ✓
                         </span>
                       )}
@@ -290,19 +313,19 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                     <button
                       type="button"
                       onClick={() => remove(entry.id)}
-                      className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-stone-900 text-xs text-white shadow hover:bg-red-600"
-                      aria-label={`Remove photo ${i + 1}`}
+                      className="absolute -end-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-stone-900 text-xs text-white shadow hover:bg-red-600"
+                      aria-label={tb.removePhoto(i + 1)}
                     >
                       ✕
                     </button>
                     {slots > 1 && (
-                      <div className="mt-1 flex items-center justify-center rounded-full border border-stone-200 bg-white" role="group" aria-label={`Copies of photo ${i + 1}`}>
+                      <div className="mt-1 flex items-center justify-center rounded-full border border-stone-200 bg-white" role="group" aria-label={tb.copiesOf(i + 1)} dir="ltr">
                         <button
                           type="button"
                           onClick={() => setCopiesFor(entry.id, n - 1)}
                           disabled={n <= 1}
                           className="flex h-8 w-8 items-center justify-center text-lg font-bold text-brand disabled:text-stone-300"
-                          aria-label={`Fewer copies of photo ${i + 1}`}
+                          aria-label={tb.fewer(i + 1)}
                         >
                           −
                         </button>
@@ -314,7 +337,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                           onClick={() => setCopiesFor(entry.id, n + 1)}
                           disabled={count >= maxSlots}
                           className="flex h-8 w-8 items-center justify-center text-lg font-bold text-brand disabled:text-stone-300"
-                          aria-label={`More copies of photo ${i + 1}`}
+                          aria-label={tb.more(i + 1)}
                         >
                           +
                         </button>
@@ -332,7 +355,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
                     style={{ aspectRatio: aspect }}
                   >
                     <span className="text-2xl leading-none" aria-hidden>+</span>
-                    <span className="text-xs font-semibold">Add more</span>
+                    <span className="text-xs font-semibold">{tb.addMore}</span>
                   </button>
                 </li>
               )}
@@ -357,16 +380,14 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
 
         {entries.length > 0 && slots > 1 && count < slots && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-brand/5 p-3 text-sm text-stone-700">
-            <span>
-              Want the same photo more than once? Tap <strong>+</strong> under it.
-            </span>
+            <span>{tb.sameTip}</span>
             {entries.length === 1 && (
               <button
                 type="button"
                 onClick={() => setCopiesFor(entries[0].id, slots)}
                 className="rounded-full bg-brand px-4 py-1.5 font-semibold text-white"
               >
-                Use this photo for all {slots}
+                {tb.useForAll(slots)}
               </button>
             )}
           </div>
@@ -375,25 +396,27 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         {overBy > 0 && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900" role="status">
             <span>
-              You added {count} photos but this bundle holds {slots}.
-              {fitsBundle ? "" : ` Remove ${overBy} to continue.`}
+              {tb.over(count, slots)}
+              {fitsBundle ? "" : tb.removeN(overBy)}
             </span>
             {fitsBundle && (
               <button type="button" onClick={() => chooseBundle(fitsBundle)} className="rounded-full bg-brand px-4 py-1.5 font-semibold text-white">
-                Switch to {fitsBundle.photoSlots} photos · {formatEGP(fitsBundle.price)}
+                {tb.switchTo(fitsBundle.photoSlots, formatEGP(fitsBundle.price))}
               </button>
             )}
           </div>
         )}
 
-        {line && (
+        {isBookmark && <p className="mt-3 text-xs text-stone-500">{t.bookmark.photosHint}</p>}
+
+        {lt && !isBookmark && (
           <p className="mt-3 text-xs text-stone-500">
-            Tip: we print each photo as a {line.size}, centred. Faces in the middle of the photo come out best.
-            {line.note && <span className="mt-1 block font-semibold text-brand">{line.note}</span>}
+            {tb.tip(lt.size)}
+            {lt.note && <span className="mt-1 block font-semibold text-brand">{lt.note}</span>}
           </p>
         )}
 
-        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-3 text-sm">
+        <label className={`mt-4 cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-3 text-sm ${isBookmark ? "hidden" : "flex"}`}>
           <input
             type="checkbox"
             checked={photosLater}
@@ -401,23 +424,21 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
             className="mt-0.5 h-5 w-5 shrink-0 accent-brand"
           />
           <span>
-            <span className="font-semibold text-stone-800">I&apos;ll send my photos on WhatsApp</span>
-            <span className="block text-stone-500">
-              Order now and send the rest of your photos with your order number after checkout.
-            </span>
+            <span className="font-semibold text-stone-800">{tb.later}</span>
+            <span className="block text-stone-500">{tb.laterSub}</span>
           </span>
         </label>
       </section>
 
       {includesCard && (
         <section className="mt-8 space-y-3">
-          <h2 className="step-title">Card details</h2>
+          <h2 className="step-title">{tb.cardDetails}</h2>
           <div>
-            <label htmlFor="bundle-names" className="mb-1 block text-sm font-medium text-stone-700">Names</label>
+            <label htmlFor="bundle-names" className="mb-1 block text-sm font-medium text-stone-700">{tb.names}</label>
             <input id="bundle-names" className="input-field" placeholder="e.g. Kirolos & Mariam" value={names} onChange={(e) => setNames(e.target.value)} />
           </div>
           <div>
-            <label htmlFor="bundle-date" className="mb-1 block text-sm font-medium text-stone-700">Event date</label>
+            <label htmlFor="bundle-date" className="mb-1 block text-sm font-medium text-stone-700">{tb.eventDate}</label>
             <input id="bundle-date" className="input-field" placeholder="e.g. 20.06.2026" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
           </div>
         </section>
@@ -428,7 +449,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         <div className="mx-auto flex max-w-5xl items-center gap-3 sm:block">
           <div className="min-w-0 flex-1 sm:flex sm:items-end sm:justify-between">
             <div>
-              <p className="truncate text-xs font-medium text-stone-500 sm:text-sm">{bundle.name}</p>
+              <p className="truncate text-xs font-medium text-stone-500 sm:text-sm">{bundleLabel(bundle.slug, bundle.name, lang)}</p>
               <p className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-brand sm:text-3xl">{formatEGP(bundle.price)}</span>
                 {saving > 0 && <span className="text-xs text-stone-400 line-through sm:text-sm">{formatEGP(bundle.compareAtPrice!)}</span>}
@@ -436,7 +457,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
             </div>
             {saving > 0 && (
               <span className="hidden rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800 sm:inline-block">
-                You save {formatEGP(saving)}
+                {tb.youSave(formatEGP(saving))}
               </span>
             )}
           </div>
@@ -446,14 +467,14 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
               onClick={() => handleAdd(false)}
               className={`btn-outline hidden sm:inline-flex ${!canAdd ? "opacity-60" : ""}`}
             >
-              Add to cart
+              {t.common.addToCart}
             </button>
             <button
               type="button"
               onClick={() => handleAdd(true)}
               className={`btn-primary px-5 sm:flex-1 ${!canAdd ? "opacity-70" : ""}`}
             >
-              {uploadingCount > 0 ? `Uploading ${uploadingCount}…` : "Order now"}
+              {uploadingCount > 0 ? tb.uploadingN(uploadingCount) : t.common.orderNow}
             </button>
           </div>
         </div>
@@ -461,16 +482,16 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
           {error}
         </p>
         <button type="button" onClick={() => handleAdd(false)} className="mx-auto mt-1 block text-xs font-semibold text-brand underline sm:hidden">
-          or add to cart &amp; keep shopping
+          {tb.addKeep}
         </button>
       </div>
 
       {added && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-green-50 p-4 text-sm text-green-800" role="status">
-          <span className="font-semibold">✓ Added to your cart!</span>
+          <span className="font-semibold">{tb.added}</span>
           <span className="flex gap-2">
-            <Link href="/cart" className="rounded-full border border-green-700 px-4 py-1.5 font-semibold">View cart</Link>
-            <Link href="/checkout" className="rounded-full bg-green-700 px-4 py-1.5 font-semibold text-white">Checkout</Link>
+            <Link href="/cart" className="rounded-full border border-green-700 px-4 py-1.5 font-semibold">{tb.viewCart}</Link>
+            <Link href="/checkout" className="rounded-full bg-green-700 px-4 py-1.5 font-semibold text-white">{tb.checkout}</Link>
           </span>
         </div>
       )}

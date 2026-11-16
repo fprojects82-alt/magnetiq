@@ -92,6 +92,15 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                     {customText?.message && <p className="text-sm text-stone-500">&ldquo;{customText.message}&rdquo;</p>}
                     {item.size && <p className="text-sm text-stone-500">{item.size}</p>}
                     <p className="text-sm text-stone-500">{images.length} print{images.length === 1 ? "" : "s"} from {new Set(images).size} photo{new Set(images).size === 1 ? "" : "s"}</p>
+                    {customText?.bookmark && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg bg-stone-50 p-2 text-sm text-stone-700">
+                        <span className="h-6 w-6 rounded-full border border-stone-300" style={{ background: customText.bookmark.color }} aria-hidden />
+                        <span>
+                          <strong>Bookmark:</strong> {customText.bookmark.shape} shape · colour <code>{customText.bookmark.color}</code>
+                          {customText.bookmark.quote && <> · quote: &ldquo;{customText.bookmark.quote}&rdquo;</>}
+                        </span>
+                      </div>
+                    )}
                     {customText?.photosLater && (
                       <p className="mt-1 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
                         Customer is sending remaining photos on WhatsApp

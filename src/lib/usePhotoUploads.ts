@@ -39,7 +39,7 @@ export function usePhotoUploads(maxPhotos = 60) {
           if (!removed.current.has(id)) patch(id, { url, status: "done", error: undefined });
         })
         .catch((err) => {
-          const message = err instanceof UploadError ? err.message : "Upload failed. Tap to retry.";
+          const message = err instanceof UploadError ? err.message : "Upload failed";
           if (!removed.current.has(id)) patch(id, { status: "error", error: message });
         })
         .finally(() => {

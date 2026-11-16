@@ -3,10 +3,11 @@
 import { useRef, useState } from "react";
 import { submitReview } from "@/app/order/[orderNumber]/confirmation/reviewActions";
 import { UploadError, uploadPhoto } from "@/lib/uploadClient";
+import { useLang } from "@/context/LangContext";
 
-export function Stars({ value, size = "text-lg" }: { value: number; size?: string }) {
+export function Stars({ value, size = "text-lg", label }: { value: number; size?: string; label?: string }) {
   return (
-    <span className={`${size} leading-none text-amber-500`} aria-label={`${value} out of 5 stars`}>
+    <span className={`${size} leading-none text-amber-500`} aria-label={label ?? `${value} out of 5 stars`} dir="ltr">
       {"★★★★★".slice(0, value)}
       <span className="text-stone-300">{"★★★★★".slice(value)}</span>
     </span>
@@ -15,6 +16,8 @@ export function Stars({ value, size = "text-lg" }: { value: number; size?: strin
 
 export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; defaultName: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t } = useLang();
+  const rt = t.reviews;
   const [rating, setRating] = useState(0);
   const [name, setName] = useState(defaultName);
   const [text, setText] = useState("");
@@ -28,43 +31,43 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
     return (
       <div className="rounded-2xl bg-green-50 p-5 text-center text-green-800" role="status">
         <p className="text-2xl" aria-hidden>💛</p>
-        <p className="mt-1 font-semibold">Thank you for your review!</p>
-        <p className="text-sm">It&apos;s now on our website.</p>
+        <p className="mt-1 font-semibold">{rt.thanks}</p>
+        <p className="text-sm">{rt.thanksSub}</p>
       </div>
     );
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!rating) return setError("Please choose a rating.");
-    if (uploading) return setError("Please wait for your photo to upload.");
+    if (!rating) return setError(rt.needRating);
+    if (uploading) return setError(rt.waitPhoto);
     setBusy(true);
     setError(null);
     const res = await submitReview({ orderNumber, name, rating, text, photoUrl }).catch(() => ({
       ok: false,
-      message: "Connection problem. Please try again.",
+      message: t.checkout.errConnection,
     }));
     setBusy(false);
-    if (!res.ok) return setError(res.message || "Something went wrong.");
+    if (!res.ok) return setError(res.message || t.checkout.errGeneric);
     setDone(true);
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-2xl bg-white p-5 text-left shadow-sm">
+    <form onSubmit={onSubmit} className="space-y-4 rounded-2xl bg-white p-5 text-start shadow-sm">
       <div>
-        <h2 className="font-semibold text-stone-800">How did we do?</h2>
-        <p className="text-sm text-stone-500">Leave a review. It will appear on our website.</p>
+        <h2 className="font-semibold text-stone-800">{rt.formTitle}</h2>
+        <p className="text-sm text-stone-500">{rt.formSub}</p>
       </div>
       <fieldset>
-        <legend className="mb-1 text-sm font-medium text-stone-700">Your rating</legend>
-        <div className="flex gap-1" role="radiogroup">
+        <legend className="mb-1 text-sm font-medium text-stone-700">{rt.rating}</legend>
+        <div className="flex gap-1" role="radiogroup" dir="ltr">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
               role="radio"
               aria-checked={rating === n}
-              aria-label={`${n} star${n > 1 ? "s" : ""}`}
+              aria-label={rt.starLabel(n)}
               onClick={() => setRating(n)}
               className={`text-4xl leading-none transition ${n <= rating ? "text-amber-500" : "text-stone-300 hover:text-amber-300"}`}
             >
@@ -74,18 +77,18 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
         </div>
       </fieldset>
       <div>
-        <label htmlFor="rv-name" className="mb-1 block text-sm font-medium text-stone-700">Your name (shown on the review)</label>
+        <label htmlFor="rv-name" className="mb-1 block text-sm font-medium text-stone-700">{rt.name}</label>
         <input id="rv-name" required maxLength={60} className="input-field" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div>
-        <label htmlFor="rv-text" className="mb-1 block text-sm font-medium text-stone-700">Your review</label>
+        <label htmlFor="rv-text" className="mb-1 block text-sm font-medium text-stone-700">{rt.text}</label>
         <textarea
           id="rv-text"
           required
           rows={3}
           maxLength={800}
           className="input-field"
-          placeholder="What did you love about your magnets?"
+          placeholder={rt.textPh}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -93,9 +96,9 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
       <div className="flex items-center gap-3">
         {photoUrl ? (
           <>
-            <img src={photoUrl} alt="Your review photo" className="h-16 w-16 rounded-lg object-cover" />
+            <img src={photoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />
             <button type="button" onClick={() => setPhotoUrl(null)} className="text-sm text-stone-500 underline">
-              Remove photo
+              {rt.removePhoto}
             </button>
           </>
         ) : (
@@ -105,7 +108,7 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
             disabled={uploading}
             className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium hover:border-brand hover:text-brand disabled:opacity-60"
           >
-            {uploading ? "Uploading…" : "📷 Add a photo of your order (optional)"}
+            {uploading ? t.common.uploading : rt.addPhoto}
           </button>
         )}
         <input
@@ -124,7 +127,7 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
             try {
               setPhotoUrl(await uploadPhoto(file));
             } catch (err) {
-              setError(err instanceof UploadError ? err.message : "Upload failed.");
+              setError(err instanceof UploadError ? err.message : t.upload.failed);
             } finally {
               setUploading(false);
             }
@@ -133,7 +136,7 @@ export function ReviewForm({ orderNumber, defaultName }: { orderNumber: string; 
       </div>
       <p role="alert" className="text-sm text-red-600 empty:hidden">{error}</p>
       <button type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? "Sending…" : "Post my review"}
+        {busy ? t.common.sending : rt.submit}
       </button>
     </form>
   );

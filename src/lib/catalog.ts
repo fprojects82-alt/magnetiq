@@ -25,6 +25,8 @@ export interface PrintLine {
   cover: string;
   gallery: { src: string; alt: string }[];
   priceSheet: string;
+  /** Arabic versions of the customer-facing text. */
+  ar: { name: string; itemName: string; tagline: string; note?: string; size: string; layers: string; layersDetail: string };
 }
 
 export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
@@ -48,6 +50,14 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
       { src: "/media/pressed-and-flat.webp", alt: "Pressed square magnets next to flat rectangle magnets on a fridge" },
     ],
     priceSheet: "/media/price-sheet-pressed.webp",
+    ar: {
+      name: "مغناطيس مضغوط",
+      itemName: "مغناطيس مضغوط",
+      tagline: "تقيل ولامع ومتين: المغناطيس المميز بتاعنا.",
+      size: "٥ × ٥ سم مربع بحواف دائرية",
+      layers: "٥ طبقات مضغوطة",
+      layersDetail: "طبقة حماية · صورة · معدن · بلاستيك · مغناطيس",
+    },
   },
   FLAT: {
     key: "FLAT",
@@ -69,6 +79,14 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
       { src: "/media/pressed-and-flat.webp", alt: "Flat rectangle magnets mixed with pressed square magnets on a fridge" },
     ],
     priceSheet: "/media/price-sheet-flat.webp",
+    ar: {
+      name: "مغناطيس مسطح",
+      itemName: "مغناطيس مسطح",
+      tagline: "مغناطيس بستايل البولارويد: غطّي التلاجة كلها.",
+      size: "٧ × ١٠ سم مستطيل",
+      layers: "طبقتين",
+      layersDetail: "صورة · مغناطيس",
+    },
   },
   STICKER: {
     key: "STICKER",
@@ -91,6 +109,15 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
       { src: "/media/price-sheet-stickers.webp", alt: "Magnetiq custom photo stickers price list" },
     ],
     priceSheet: "/media/price-sheet-stickers.webp",
+    ar: {
+      name: "ستيكرز 3D",
+      itemName: "ستيكر 3D",
+      tagline: "صورك المفضلة، دلوقتي على شكل ستيكرز 3D لامعة. الزقها في أي مكان.",
+      note: "متاح بأي مقاس! كلمنا على واتساب لو عايز مقاس مخصوص.",
+      size: "٣ × ٣ سم",
+      layers: "لمسة 3D بارزة",
+      layersDetail: "طبقة لامعة بارزة فوق صورتك · ضهر لاصق",
+    },
   },
   BOOKMARK: {
     key: "BOOKMARK",
@@ -112,6 +139,15 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
       { src: "/media/bookmark-quran.webp", alt: "A blue ornamental magnetic bookmark clipped onto a page of the Quran" },
     ],
     priceSheet: "/media/bookmark-daisies.webp",
+    ar: {
+      name: "فواصل كتب مغناطيسية",
+      itemName: "فاصل كتاب مغناطيسي",
+      tagline: "فواصل كتب مغناطيسية بتتقفل على الصفحة ومبتقعش أبداً.",
+      note: "ابعت صورتك، أو اقتباس، أو أي تصميم بتحبه.",
+      size: "فاصل كتاب مغناطيسي",
+      layers: "مغناطيس بيتطبق",
+      layersDetail: "مطبوع من الناحيتين · مغناطيس جوه · بيتقفل على الصفحة",
+    },
   },
 };
 
@@ -139,6 +175,43 @@ export function perPiece(price: number, pieces: number): number {
   return pieces > 0 ? Math.round(price / pieces) : price;
 }
 
-export function itemLabel(line: PrintLine, count: number): string {
+export function itemLabel(line: PrintLine, count: number, lang: "en" | "ar" = "en"): string {
+  if (lang === "ar") return count === 1 ? line.ar.itemName : `${line.ar.itemName} × ${count}`;
   return `${count} ${line.itemName}${count === 1 ? "" : "s"}`;
+}
+
+/** The line's customer-facing text in the chosen language. */
+export function lineText(line: PrintLine, lang: "en" | "ar") {
+  if (lang === "ar") return { ...line.ar, note: line.ar.note };
+  return {
+    name: line.name,
+    itemName: line.itemName,
+    tagline: line.tagline,
+    note: line.note,
+    size: line.size,
+    layers: line.layers,
+    layersDetail: line.layersDetail,
+  };
+}
+
+const SLUG_PREFIX_TO_LINE: Record<string, PrintLineKey> = {
+  pressed: "PRESSED",
+  flat: "FLAT",
+  sticker: "STICKER",
+  bookmark: "BOOKMARK",
+};
+
+/** Display name for a bundle slug like "pressed-12" in the chosen language. */
+export function bundleLabel(slug: string, fallback: string, lang: "en" | "ar"): string {
+  const m = /^([a-z]+)-(\d+)$/.exec(slug);
+  const key = m ? SLUG_PREFIX_TO_LINE[m[1]] : undefined;
+  if (!m || !key) return fallback;
+  return itemLabel(PRINT_LINES[key], Number(m[2]), lang);
+}
+
+/** The product line a bundle slug belongs to ("pressed-12" -> Pressed Magnets). */
+export function lineForSlug(slug: string): PrintLine | null {
+  const m = /^([a-z]+)-\d+$/.exec(slug);
+  const key = m ? SLUG_PREFIX_TO_LINE[m[1]] : undefined;
+  return key ? PRINT_LINES[key] : null;
 }

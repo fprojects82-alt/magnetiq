@@ -68,3 +68,20 @@ body {
     animation: none;
   }
 }
+
+/* Arabic: Cairo for everything, no italics (Arabic script has none). */
+html[lang="ar"] body {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+}
+html[lang="ar"] .font-display,
+html[lang="ar"] .section-title {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+  font-style: normal;
+}
+html[lang="ar"] .italic {
+  font-style: normal;
+}
+/* Admin pages stay in English even when the shop is shown in Arabic. */
+html[lang="ar"] [lang="en"] {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}

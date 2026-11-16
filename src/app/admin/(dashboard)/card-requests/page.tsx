@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { isAllowedUploadUrl } from "@/lib/orders";
 import { MAGNET_OPTIONS } from "@/lib/cardRequest";
 import { CardRequestStatusSelect } from "@/components/admin/CardRequestStatusSelect";
+import { CardQuoteForm } from "@/components/admin/CardQuoteForm";
+import { formatEGP } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,14 @@ export default async function AdminCardRequestsPage() {
                       {r.withMagnets ? `With ${r.magnetCount} × ${magnet}` : "No magnets"}
                     </p>
                     <p className="mt-1 text-xs text-stone-400">{r.createdAt.toLocaleString()}</p>
+                    {r.quotedPrice != null && (
+                      <p className="mt-1 text-sm font-semibold">
+                        {formatEGP(r.quotedPrice)}{" "}
+                        <span className={`ms-1 rounded-full px-2 py-0.5 text-xs ${r.paidAt ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                          {r.paidAt ? "Paid" : "Not paid"}
+                        </span>
+                      </p>
+                    )}
                   </div>
                   <CardRequestStatusSelect id={r.id} status={r.status} />
                 </div>
@@ -66,6 +76,7 @@ export default async function AdminCardRequestsPage() {
                     ))}
                   </div>
                 )}
+                <CardQuoteForm id={r.id} quotedPrice={r.quotedPrice} adminNote={r.adminNote} paid={Boolean(r.paidAt)} />
               </article>
             );
           })}

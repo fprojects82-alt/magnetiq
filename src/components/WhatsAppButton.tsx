@@ -6,15 +6,25 @@ export function WhatsAppIcon({ className = "h-6 w-6" }: { className?: string }) 
   );
 }
 
-export function WhatsAppButton({ number, raised = false }: { number: string; raised?: boolean }) {
-  const text = encodeURIComponent("Hi Magnetiq! I'd like to order photo magnets 🧲");
+export function WhatsAppButton({
+  number,
+  raised = false,
+  greeting = "Hi Magnetiq! I'd like to order photo magnets 🧲",
+  label = "Chat with us on WhatsApp",
+}: {
+  number: string;
+  raised?: boolean;
+  greeting?: string;
+  label?: string;
+}) {
+  const text = encodeURIComponent(greeting);
   return (
     <a
       href={`https://wa.me/${number}?text=${text}`}
       target="_blank"
       rel="noreferrer"
-      aria-label="Chat with us on WhatsApp"
-      className={`fixed right-3 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 sm:bottom-6 sm:right-4 sm:h-14 sm:w-14 ${
+      aria-label={label}
+      className={`fixed end-3 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 sm:bottom-6 sm:end-4 sm:h-14 sm:w-14 ${
         raised ? "bottom-36" : "bottom-4"
       }`}
     >
