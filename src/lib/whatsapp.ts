@@ -44,6 +44,7 @@ export function buildWhatsAppOrderLink(order: OrderLike, whatsappNumber: string)
     `Address: ${order.address}, ${order.city}`,
     "",
     `Payment: ${PAYMENT_METHOD_LABELS[order.paymentMethod as PaymentMethod] ?? order.paymentMethod}`,
+    order.paymentMethod === "INSTAPAY" ? `📲 InstaPay screenshot for order ${order.orderNumber} attached` : null,
   ].filter((line): line is string => line !== null);
 
   const text = encodeURIComponent(lines.join("\n"));

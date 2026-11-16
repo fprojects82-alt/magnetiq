@@ -33,17 +33,18 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
         </div>
         <div>
           <h2 className="mb-3 font-semibold">Shop</h2>
-          <ul className="space-y-2 text-sm text-white/85">
+          <ul className="space-y-1 text-sm text-white/85 [&_a]:inline-block [&_a]:py-1.5">
             <li><Link href="/shop/pressed" className="hover:underline">Pressed magnets (5 × 5 cm)</Link></li>
             <li><Link href="/shop/flat" className="hover:underline">Flat magnets (7 × 10 cm)</Link></li>
             <li><Link href="/shop/stickers" className="hover:underline">3D stickers (3 × 3 cm)</Link></li>
             <li><Link href="/event-cards" className="hover:underline">Event cards</Link></li>
             <li><Link href="/cart" className="hover:underline">Your cart</Link></li>
+            <li><Link href="/track" className="hover:underline">Track your order</Link></li>
           </ul>
         </div>
         <div>
           <h2 className="mb-3 font-semibold">Talk to us</h2>
-          <ul className="space-y-3 text-sm">
+          <ul className="space-y-1 text-sm [&_a]:py-1.5">
             {whatsappNumber && (
               <li>
                 <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline">

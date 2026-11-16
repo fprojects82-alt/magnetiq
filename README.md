@@ -23,7 +23,9 @@ Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma and MongoDB
   (incl. large / HEIC) are resized to JPEG in the browser before upload
 - "I'll send my photos on WhatsApp" option for customers who'd rather not upload
 - Cart with coupon codes, guest checkout, order confirmation with confetti
-- Cash on Delivery or InstaPay, plus a pre-filled WhatsApp order handoff
+- InstaPay only: after ordering, the customer gets a unique order number, transfers the total and
+  uploads the screenshot on the confirmation page (shown in Admin → Orders), plus a WhatsApp handoff
+- Delivery priced by zone (QUIGO Express list, 55–155 EGP) chosen at checkout; edit in `src/lib/shipping.ts`
 - Real product photos and the engagement-card video live in `public/media`
 
 **Customer accounts**
@@ -46,8 +48,9 @@ npm run dev
 Open http://localhost:3000. The admin panel is at `/admin/login` — there is no public
 link to it, by design.
 
-Without `BLOB_READ_WRITE_TOKEN` set, uploaded photos are written to `public/uploads`,
-so local development needs no cloud services beyond the database.
+Without `BLOB_READ_WRITE_TOKEN` set, uploaded photos are stored in MongoDB and served from
+`/api/uploads/<id>`, so uploads work with no extra setup. Connecting Vercel Blob is optional
+(faster image delivery); when its token is present, new uploads go there instead.
 
 ## Deploying to Vercel
 

@@ -31,6 +31,7 @@ export async function findValidCoupon(code: string) {
 
 /** Only accept photo URLs our own upload endpoint can produce. */
 export function isAllowedUploadUrl(url: string): boolean {
+  if (/^\/api\/uploads\/[a-f0-9]{24}$/i.test(url)) return true;
   if (url.startsWith("/uploads/") && !url.includes("..")) return true;
   try {
     const u = new URL(url);

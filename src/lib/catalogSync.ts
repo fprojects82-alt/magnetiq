@@ -1,15 +1,20 @@
 import { db } from "./db";
-import { CATALOG_OFFERS, CATALOG_PACKAGES, CATALOG_VERSION, RETIRED_OFFER_PATTERN } from "./catalogData";
+import {
+  CATALOG_OFFERS,
+  CATALOG_PACKAGES,
+  CATALOG_VERSION,
+  DEFAULT_WHATSAPP,
+  RETIRED_OFFER_PATTERN,
+} from "./catalogData";
 
 let synced = false;
 let inflight: Promise<void> | null = null;
 
 /**
- * Loads the built-in catalog into the database the first time a new
- * CATALOG_VERSION is deployed, so a live site never shows empty bundle lists
- * just because nobody ran `npm run db:seed`. After that it is a no-op (one
- * settings read per server instance), and admin edits are never overwritten
- * until the version is bumped again.
+ * Applies built-in data updates to the live database the first time a new
+ * CATALOG_VERSION is deployed, so nobody has to run `npm run db:seed`.
+ * Each step runs once; after that this is a single settings read per server
+ * instance, and admin edits are left alone.
  */
 export async function ensureCatalog(): Promise<void> {
   if (synced) return;
@@ -23,13 +28,7 @@ export async function ensureCatalog(): Promise<void> {
   await inflight;
 }
 
-async function run() {
-  const settings = await db.settings.findUnique({ where: { id: "singleton" } });
-  if ((settings?.catalogVersion ?? 0) >= CATALOG_VERSION) {
-    synced = true;
-    return;
-  }
-
+async function loadCatalog() {
   for (const pkg of CATALOG_PACKAGES) {
     await db.package.upsert({ where: { slug: pkg.slug }, update: pkg, create: pkg });
   }
@@ -37,9 +36,7 @@ async function run() {
     where: { slug: { notIn: CATALOG_PACKAGES.map((p) => p.slug) } },
     data: { active: false },
   });
-
-  // Event cards are now a request form (/event-cards), not cart products,
-  // and the old single small/large magnets are replaced by the bundles.
+  // Event cards are a request form (/event-cards); old single products are replaced by bundles.
   await db.product.updateMany({ where: { active: true }, data: { active: false } });
 
   const offers = await db.offer.findMany();
@@ -51,13 +48,28 @@ async function run() {
   for (const offer of CATALOG_OFFERS) {
     if (!titles.has(offer.title)) await db.offer.create({ data: { ...offer, active: true } });
   }
+}
+
+async function run() {
+  const settings = await db.settings.findUnique({ where: { id: "singleton" } });
+  const current = settings?.catalogVersion ?? 0;
+  if (current >= CATALOG_VERSION) {
+    synced = true;
+    return;
+  }
+
+  // v3: magnets / stickers catalog, retire old offers and products.
+  if (current < 3) await loadCatalog();
+
+  // v4: the shop's WhatsApp number.
+  const whatsapp = current < 4 ? DEFAULT_WHATSAPP : settings?.whatsappNumber ?? DEFAULT_WHATSAPP;
 
   await db.settings.upsert({
     where: { id: "singleton" },
-    update: { catalogVersion: CATALOG_VERSION },
+    update: { catalogVersion: CATALOG_VERSION, whatsappNumber: whatsapp },
     create: {
       id: "singleton",
-      whatsappNumber: process.env.WHATSAPP_NUMBER || "201234567890",
+      whatsappNumber: whatsapp,
       instapayNumber: process.env.INSTAPAY_NUMBER || "",
       deliveryFee: Number(process.env.DELIVERY_FEE || 50),
       catalogVersion: CATALOG_VERSION,

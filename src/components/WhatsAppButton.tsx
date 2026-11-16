@@ -14,11 +14,11 @@ export function WhatsAppButton({ number, raised = false }: { number: string; rai
       target="_blank"
       rel="noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className={`fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 sm:bottom-6 ${
-        raised ? "bottom-32" : "bottom-5"
+      className={`fixed right-3 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 sm:bottom-6 sm:right-4 sm:h-14 sm:w-14 ${
+        raised ? "bottom-36" : "bottom-4"
       }`}
     >
-      <WhatsAppIcon className="h-7 w-7" />
+      <WhatsAppIcon className="h-6 w-6 sm:h-7 sm:w-7" />
     </a>
   );
 }

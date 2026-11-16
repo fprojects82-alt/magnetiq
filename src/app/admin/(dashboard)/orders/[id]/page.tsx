@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatEGP } from "@/lib/currency";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
+import { PaidToggle } from "@/components/admin/PaidToggle";
 import { EventCardText } from "@/lib/types";
 import { isAllowedUploadUrl } from "@/lib/orders";
+import { getZone } from "@/lib/shipping";
 
 function safeParse<T>(raw: string | null | undefined, fallback: T): T {
   if (!raw) return fallback;
@@ -24,7 +26,10 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-stone-800">Order {order.orderNumber}</h1>
-        <OrderStatusSelect orderId={order.id} status={order.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <PaidToggle orderId={order.id} paid={Boolean(order.paidAt)} />
+          <OrderStatusSelect orderId={order.id} status={order.status} />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
@@ -35,7 +40,25 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
             <div><dt className="text-stone-500">Phone</dt><dd>{order.phone}</dd></div>
             <div><dt className="text-stone-500">Address</dt><dd>{order.address}, {order.city}</dd></div>
             {order.notes && <div><dt className="text-stone-500">Notes</dt><dd>{order.notes}</dd></div>}
-            <div><dt className="text-stone-500">Payment</dt><dd>{order.paymentMethod}</dd></div>
+            <div><dt className="text-stone-500">Delivery zone</dt><dd>{getZone(order.deliveryZone)?.name ?? "—"}</dd></div>
+            <div>
+              <dt className="text-stone-500">Payment</dt>
+              <dd>
+                {order.paymentMethod}
+                {order.paymentMethod === "INSTAPAY" && (
+                  order.paymentProofUrl && isAllowedUploadUrl(order.paymentProofUrl) ? (
+                    <a href={order.paymentProofUrl} target="_blank" rel="noreferrer" className="mt-2 block">
+                      <img src={order.paymentProofUrl} alt="InstaPay screenshot" className="max-h-64 rounded-lg border border-stone-200" />
+                      <span className="text-xs font-semibold text-brand underline">Open screenshot</span>
+                    </a>
+                  ) : (
+                    <span className="mt-1 block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
+                      No screenshot uploaded yet (check WhatsApp)
+                    </span>
+                  )
+                )}
+              </dd>
+            </div>
             <div><dt className="text-stone-500">Placed</dt><dd>{order.createdAt.toLocaleString()}</dd></div>
           </dl>
 

@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/shop/flat", label: "Flat Magnets" },
   { href: "/shop/stickers", label: "3D Stickers" },
   { href: "/event-cards", label: "Event Cards" },
+  { href: "/track", label: "Track Order" },
 ];
 
 function CartIcon() {

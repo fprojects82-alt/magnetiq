@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logout } from "../actions";
+import { db } from "@/lib/db";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
@@ -12,7 +13,36 @@ const NAV = [
   { href: "/admin/settings", label: "Settings" },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+async function getBadges(): Promise<Record<string, number>> {
+  try {
+    const [orders, cards] = await Promise.all([
+      db.order.findMany({
+        where: { status: { not: "CANCELLED" } },
+        select: { status: true, paidAt: true, paymentProofUrl: true },
+      }),
+      db.cardRequest.count({ where: { status: "NEW" } }),
+    ]);
+    // New orders, plus payment screenshots waiting to be checked.
+    const ordersBadge = orders.filter((o) => o.status === "PENDING" || (!o.paidAt && o.paymentProofUrl)).length;
+    return { "/admin/orders": ordersBadge, "/admin/card-requests": cards };
+  } catch {
+    return {};
+  }
+}
+
+function Badge({ n }: { n?: number }) {
+  if (!n) return null;
+  return (
+    <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-white">
+      {n}
+    </span>
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const badges = await getBadges();
   return (
     <div className="flex min-h-screen bg-brand-cream">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-stone-200 bg-white p-4 sm:flex">
@@ -25,9 +55,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-brand/10 hover:text-brand"
+              className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-brand/10 hover:text-brand"
             >
               {item.label}
+              <Badge n={badges[item.href]} />
             </Link>
           ))}
         </nav>
@@ -54,9 +85,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               key={item.href}
               href={item.href}
-              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-brand/10 hover:text-brand"
+              className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-brand/10 hover:text-brand"
             >
               {item.label}
+              <Badge n={badges[item.href]} />
             </Link>
           ))}
         </nav>
