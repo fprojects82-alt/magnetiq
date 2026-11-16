@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/shop/pressed", label: "Pressed Magnets" },
   { href: "/shop/flat", label: "Flat Magnets" },
   { href: "/shop/stickers", label: "3D Stickers" },
+  { href: "/shop/bookmarks", label: "Bookmarks" },
   { href: "/event-cards", label: "Event Cards" },
   { href: "/track", label: "Track Order" },
 ];

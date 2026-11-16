@@ -172,7 +172,7 @@ export function CheckoutPageClient({
                   Transfer <strong>{zone ? formatEGP(total) : "the total"}</strong> to our InstaPay
                   {instapayNumber ? ":" : "."}
                 </li>
-                <li>Upload the transfer screenshot on the next page, or send it on WhatsApp with your order number.</li>
+                <li>Upload the transfer screenshot on the next page. It goes straight to our team.</li>
               </ol>
               {instapayNumber && (
                 <div className="flex flex-wrap items-center gap-2">

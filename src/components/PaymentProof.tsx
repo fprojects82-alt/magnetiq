@@ -25,7 +25,16 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
   );
 }
 
-export function PaymentProofUploader({ orderNumber, initialUrl }: { orderNumber: string; initialUrl: string | null }) {
+export function PaymentProofUploader({
+  orderNumber,
+  initialUrl,
+  fallbackHref,
+}: {
+  orderNumber: string;
+  initialUrl: string | null;
+  /** WhatsApp link, offered only if the upload doesn't work for the customer. */
+  fallbackHref?: string;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(initialUrl);
   const [busy, setBusy] = useState(false);
@@ -94,6 +103,15 @@ export function PaymentProofUploader({ orderNumber, initialUrl }: { orderNumber:
         }}
       />
       <p role="alert" className="mt-2 text-sm text-red-600 empty:hidden">{error}</p>
+      {!url && fallbackHref && (
+        <p className="mt-2 text-xs text-stone-500">
+          Can&apos;t upload it?{" "}
+          <a href={fallbackHref} target="_blank" rel="noreferrer" className="font-semibold text-[#1f9e4f] underline">
+            Send the screenshot on WhatsApp instead
+          </a>{" "}
+          with your order number.
+        </p>
+      )}
     </div>
   );
 }

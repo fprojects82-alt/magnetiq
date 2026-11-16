@@ -30,6 +30,11 @@ const playfair = Playfair_Display({
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;
 
+// The header shows live offers and the logged-in customer, so every page renders
+// per request. (Without this, the try/catch around the cookie read below hid the
+// dynamic usage from Next.js and pages like /login were frozen at build time.)
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   ...(SITE_URL ? { metadataBase: new URL(SITE_URL) } : {}),
   title: {

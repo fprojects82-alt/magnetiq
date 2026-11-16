@@ -24,7 +24,7 @@ export default async function PackagesPage() {
       <h1 className="font-display text-3xl font-bold italic text-brand sm:text-5xl">What would you like?</h1>
       <p className="mt-1 text-stone-600">Pick a product to see its prices and upload your photos.</p>
 
-      <ul className="mt-6 grid gap-4 md:grid-cols-3">
+      <ul className="mt-6 grid gap-4 md:grid-cols-2">
         {lines.map(({ line, bundles }) => {
           const single = bundles.find((b) => b.photoSlots === 1);
           const each = bundles.length ? Math.min(...bundles.map((b) => Math.round(b.price / b.photoSlots))) : null;
