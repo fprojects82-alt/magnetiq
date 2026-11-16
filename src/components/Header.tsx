@@ -7,9 +7,9 @@ import { Logo } from "./Logo";
 import { useCart } from "@/context/CartContext";
 
 const NAV_LINKS = [
-  { href: "/packages#pressed", label: "Pressed Magnets" },
-  { href: "/packages#flat", label: "Flat Magnets" },
-  { href: "/packages#stickers", label: "3D Stickers" },
+  { href: "/shop/pressed", label: "Pressed Magnets" },
+  { href: "/shop/flat", label: "Flat Magnets" },
+  { href: "/shop/stickers", label: "3D Stickers" },
   { href: "/event-cards", label: "Event Cards" },
 ];
 

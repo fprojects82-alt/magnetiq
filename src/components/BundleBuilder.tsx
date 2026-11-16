@@ -58,9 +58,9 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
 
   // Keep the URL in sync so the page can be shared / refreshed on the chosen size.
   useEffect(() => {
-    const url = `/packages/${bundle.slug}`;
-    if (window.location.pathname !== url) window.history.replaceState(null, "", url);
-  }, [bundle.slug]);
+    const url = line ? `/shop/${line.anchor}?size=${bundle.photoSlots}` : `/packages/${bundle.slug}`;
+    if (window.location.pathname + window.location.search !== url) window.history.replaceState(null, "", url);
+  }, [bundle.slug, bundle.photoSlots, line]);
 
   function chooseBundle(next: BundleOption) {
     setSlug(next.slug);

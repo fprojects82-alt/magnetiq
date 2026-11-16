@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatEGP } from "@/lib/currency";
-import { itemLabel, perPiece, PrintLine } from "@/lib/catalog";
+import { itemLabel, perPiece, PrintLine, shopHref } from "@/lib/catalog";
 
 interface Row {
   slug: string;
@@ -19,7 +19,7 @@ export function PriceList({ line, bundles }: { line: PrintLine; bundles: Row[] }
         return (
           <li key={b.slug}>
             <Link
-              href={`/packages/${b.slug}`}
+              href={shopHref(line, b.photoSlots)}
               className="group flex items-center gap-4 rounded-full border-2 border-brand/30 bg-white py-2 pl-2 pr-5 transition hover:border-brand hover:shadow-md"
             >
               <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand text-lg font-bold text-white">

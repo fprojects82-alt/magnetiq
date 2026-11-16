@@ -1,204 +1,47 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import {
+  CATALOG_OFFERS,
+  CATALOG_PACKAGES,
+  CATALOG_VERSION,
+  RETIRED_OFFER_PATTERN,
+} from "../src/lib/catalogData";
 
 const prisma = new PrismaClient();
 
-// Prices from the Magnetiq price sheets.
-// Pressed Magnets (5 layers) — 5 x 5 cm rounded square. Single piece: 50 EGP.
-const PRESSED_SINGLE = 50;
-const PRESSED_BUNDLES: [pieces: number, price: number][] = [
-  [1, PRESSED_SINGLE],
-  [6, 270],
-  [8, 340],
-  [12, 480],
-  [15, 570],
-  [20, 720],
-  [28, 960],
-];
-
-// Flat Magnets (2 layers) — 7 x 10 cm rectangle. `save` is the amount printed
-// under each price on the sheet. Single piece: 35 EGP.
-const FLAT_BUNDLES: [pieces: number, price: number, save: number][] = [
-  [1, 35, 0],
-  [6, 200, 120],
-  [8, 250, 180],
-  [12, 300, 250],
-  [15, 360, 320],
-  [20, 400, 450],
-  [28, 560, 600],
-];
-
-// 3D Stickers — 3 x 3 cm, any size on request.
-const STICKER_BUNDLES: [pieces: number, price: number][] = [
-  [1, 50],
-  [3, 140],
-  [5, 240],
-  [10, 450],
-  [15, 650],
-  [20, 850],
-  [50, 2250],
-  [100, 3500],
-];
-
-const POPULAR = 12;
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-function pressedPackages() {
-  return PRESSED_BUNDLES.map(([pieces, price], i) => {
-    const each = Math.round(price / pieces);
-    const fullPrice = PRESSED_SINGLE * pieces;
-    return {
-      slug: `pressed-${pieces}`,
-      name: plural(pieces, "Pressed Magnet"),
-      description: `${plural(pieces, "pressed photo magnet")}, 5 x 5 cm rounded square${pieces === 1 ? "" : "s"} made of 5 pressed layers (lamination, photo, metal, plastic backing, magnet). ${each} EGP each.`,
-      price,
-      compareAtPrice: fullPrice > price ? fullPrice : null,
-      badge: pieces === POPULAR ? "Most popular" : pieces === 28 ? "Best value" : null,
-      composition: `${pieces} x Pressed magnet (5 x 5 cm) · ${each} EGP each`,
-      sampleImageUrl: "/media/pressed-flatlay.webp",
-      photoSlots: pieces,
-      line: "PRESSED",
-      active: true,
-      sortOrder: i + 1,
-    };
-  });
-}
-
-function flatPackages() {
-  return FLAT_BUNDLES.map(([pieces, price, save], i) => ({
-    slug: `flat-${pieces}`,
-    name: plural(pieces, "Flat Magnet"),
-    description: `${plural(pieces, "flat photo magnet")}, 7 x 10 cm polaroid-style, 2 layers (photo + magnet).${save ? ` Save ${save} EGP.` : ""}`,
-    price,
-    compareAtPrice: save ? price + save : null,
-    badge: pieces === POPULAR ? "Most popular" : save ? `Save ${save} EGP` : null,
-    composition: `${pieces} x Flat magnet (7 x 10 cm) · ${Math.round(price / pieces)} EGP each`,
-    sampleImageUrl: "/media/flat-fridge-wall.webp",
-    photoSlots: pieces,
-    line: "FLAT",
-    active: true,
-    sortOrder: 100 + i + 1,
-  }));
-}
-
-function stickerPackages() {
-  const single = STICKER_BUNDLES[0][1];
-  return STICKER_BUNDLES.map(([pieces, price], i) => {
-    const each = Math.round(price / pieces);
-    const fullPrice = single * pieces;
-    return {
-      slug: `sticker-${pieces}`,
-      name: plural(pieces, "3D Sticker"),
-      description: `${plural(pieces, "3D photo sticker")}, 3 x 3 cm with a glossy domed finish. Other sizes available on request.`,
-      price,
-      compareAtPrice: fullPrice > price ? fullPrice : null,
-      badge: pieces === 10 ? "Most popular" : pieces === 100 ? "Best value" : null,
-      composition: `${pieces} x 3D sticker (3 x 3 cm) · ${each} EGP each`,
-      sampleImageUrl: "/media/stickers-3d.webp",
-      photoSlots: pieces,
-      line: "STICKER",
-      active: true,
-      sortOrder: 200 + i + 1,
-    };
-  });
-}
-
-const EVENT_CARDS = [
-  {
-    slug: "engagement-card",
-    name: "Engagement Card with Magnet",
-    type: "EVENT_CARD",
-    description:
-      "A printed engagement card with your photo as a pressed magnet that guests take home. Add your names, date and a line of text.",
-    price: 90,
-    sampleImageUrl: "/media/engagement-cards.webp",
-    sortOrder: 1,
-  },
-  {
-    slug: "save-the-date-card",
-    name: "Save the Date Card",
-    type: "EVENT_CARD",
-    description:
-      "A printed Save the Date card with an embedded custom-photo magnet. Upload your photo and add your names and date.",
-    price: 90,
-    sampleImageUrl: "/samples/card-save-the-date.svg",
-    sortOrder: 2,
-  },
-  {
-    slug: "proposal-card",
-    name: "Welcome to Our Proposal Card",
-    type: "EVENT_CARD",
-    description:
-      "A welcome card for your proposal event, with an embedded custom-photo magnet of the special moment.",
-    price: 95,
-    sampleImageUrl: "/samples/card-proposal.svg",
-    sortOrder: 3,
-  },
-  {
-    slug: "wedding-invitation-card",
-    name: "Wedding Invitation Card",
-    type: "EVENT_CARD",
-    description: "An elegant wedding invitation card with an embedded custom-photo magnet of the couple.",
-    price: 100,
-    sampleImageUrl: "/samples/card-wedding.svg",
-    sortOrder: 4,
-  },
-];
+// The site also loads this catalog by itself on first request (src/lib/catalogSync.ts).
+// Running the seed is still useful for a fresh database and to create the admin user.
 
 async function main() {
   // Upsert by slug instead of wiping collections, so re-seeding never breaks
-  // links from existing orders. Anything not in this file is hidden, not deleted.
-  const packages = [...pressedPackages(), ...flatPackages(), ...stickerPackages()];
-  for (const pkg of packages) {
+  // links from existing orders. Anything not in the catalog is hidden, not deleted.
+  for (const pkg of CATALOG_PACKAGES) {
     await prisma.package.upsert({ where: { slug: pkg.slug }, update: pkg, create: pkg });
   }
   await prisma.package.updateMany({
-    where: { slug: { notIn: packages.map((p) => p.slug) } },
+    where: { slug: { notIn: CATALOG_PACKAGES.map((p) => p.slug) } },
     data: { active: false },
   });
+  // Event cards are handled by the request form at /event-cards.
+  await prisma.product.updateMany({ data: { active: false } });
 
-  for (const card of EVENT_CARDS) {
-    const data = { ...card, compareAtPrice: null, active: true };
-    await prisma.product.upsert({ where: { slug: card.slug }, update: data, create: data });
+  const offers = await prisma.offer.findMany();
+  const retired = offers.filter((o) => RETIRED_OFFER_PATTERN.test(`${o.title} ${o.description}`));
+  await prisma.offer.deleteMany({ where: { id: { in: retired.map((o) => o.id) } } });
+  const titles = new Set(offers.map((o) => o.title));
+  for (const offer of CATALOG_OFFERS) {
+    if (!titles.has(offer.title)) await prisma.offer.create({ data: { ...offer, active: true } });
   }
-  await prisma.product.updateMany({
-    where: { slug: { notIn: EVENT_CARDS.map((c) => c.slug) } },
-    data: { active: false },
-  });
-
-  await prisma.offer.deleteMany();
-  await prisma.offer.createMany({
-    data: [
-      {
-        title: "Bundle & save: pressed magnets from 34 EGP each",
-        description: "The more moments you print, the less each one costs. 28 pressed photos for 960 EGP.",
-        badgeText: "From 34 EGP",
-        active: true,
-      },
-      {
-        title: "Flat magnets: save up to 600 EGP",
-        description: "28 polaroid-style flat photo magnets for just 560 EGP.",
-        badgeText: "Save 600",
-        active: true,
-      },
-      {
-        title: "New: 3D photo stickers",
-        description: "Glossy 3D domed stickers of your photos, from 50 EGP. 100 stickers for 3,500 EGP.",
-        badgeText: "New",
-        active: true,
-      },
-    ],
-  });
 
   await prisma.settings.upsert({
     where: { id: "singleton" },
-    update: {},
+    update: { catalogVersion: CATALOG_VERSION },
     create: {
       id: "singleton",
       whatsappNumber: process.env.WHATSAPP_NUMBER || "201234567890",
       instapayNumber: process.env.INSTAPAY_NUMBER || "",
       deliveryFee: Number(process.env.DELIVERY_FEE || 50),
+      catalogVersion: CATALOG_VERSION,
     },
   });
 

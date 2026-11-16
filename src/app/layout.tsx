@@ -6,6 +6,7 @@ import { SiteChrome } from "@/components/SiteChrome";
 import { getSettings } from "@/lib/settings";
 import { getCustomerSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { ensureCatalog } from "@/lib/catalogSync";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -54,6 +55,7 @@ export const viewport: Viewport = {
 async function loadChromeData() {
   // The header/footer must never take the whole site down if the database is
   // briefly unreachable, so fall back to env defaults instead of throwing.
+  await ensureCatalog();
   const [settings, offers, customerSession] = await Promise.all([
     getSettings().catch(() => null),
     db.offer

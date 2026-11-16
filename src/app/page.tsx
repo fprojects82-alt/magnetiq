@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { PRINT_LINES, PRINT_LINE_KEYS, SOCIAL_LINKS } from "@/lib/catalog";
+import { PRINT_LINES, PRINT_LINE_KEYS, SOCIAL_LINKS, shopHref } from "@/lib/catalog";
 import { getLineBundles } from "@/lib/bundles";
 import { formatEGP } from "@/lib/currency";
 import { getSettings } from "@/lib/settings";
 import { OfferBanner } from "@/components/OfferBanner";
-import { ProductCard } from "@/components/ProductCard";
 import { Parallax, Reveal } from "@/components/ScrollFX";
 import { InstagramIcon, TikTokIcon } from "@/components/Footer";
 import { WhatsAppIcon } from "@/components/WhatsAppButton";
@@ -53,7 +52,7 @@ const FAQ = [
 ];
 
 export default async function HomePage() {
-  const [offers, lines, cards, settings] = await Promise.all([
+  const [offers, lines, settings] = await Promise.all([
     db.offer.findMany({ where: { active: true } }).catch(() => []),
     Promise.all(
       PRINT_LINE_KEYS.map(async (key) => ({
@@ -61,9 +60,6 @@ export default async function HomePage() {
         bundles: await getLineBundles(key).catch(() => []),
       }))
     ),
-    db.product
-      .findMany({ where: { active: true, type: "EVENT_CARD" }, orderBy: { sortOrder: "asc" }, take: 4 })
-      .catch(() => []),
     getSettings().catch(() => null),
   ]);
 
@@ -95,7 +91,7 @@ export default async function HomePage() {
                 return (
                   <Link
                     key={line.key}
-                    href={popular ? `/packages/${popular.slug}` : `/packages#${line.anchor}`}
+                    href={shopHref(line, popular?.photoSlots)}
                     className={i === 0 ? "btn-primary text-base" : "btn-outline text-base"}
                   >
                     {line.name}
@@ -170,7 +166,7 @@ export default async function HomePage() {
                       {bundles.map((b) => (
                         <Link
                           key={b.slug}
-                          href={`/packages/${b.slug}`}
+                          href={shopHref(line, b.photoSlots)}
                           className="rounded-full border border-brand/30 px-3 py-1 text-sm font-medium text-stone-700 hover:border-brand hover:bg-brand hover:text-white"
                         >
                           {b.photoSlots} · {formatEGP(b.price)}
@@ -178,7 +174,7 @@ export default async function HomePage() {
                       ))}
                     </div>
                     <div className="mt-auto pt-6">
-                      <Link href={popular ? `/packages/${popular.slug}` : `/packages#${line.anchor}`} className="btn-primary w-full">
+                      <Link href={shopHref(line, popular?.photoSlots)} className="btn-primary w-full">
                         Order {line.name}
                       </Link>
                     </div>
@@ -250,8 +246,7 @@ export default async function HomePage() {
       </section>
 
       {/* EVENT CARDS */}
-      {cards.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="cards-title">
+      <section className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="cards-title">
           <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
             <Reveal>
               <video
@@ -269,20 +264,21 @@ export default async function HomePage() {
               <Reveal>
                 <h2 id="cards-title" className="section-title">Event cards with a magnet</h2>
                 <p className="mt-2 text-stone-600">
-                  Engagement, save the date, proposal and wedding cards, each with your photo as a magnet your guests keep on their fridge.
+                  Engagement, wedding, save the date, proposal or birthday: we print your cards and can add a photo magnet or 3D
+                  sticker on each one, so your guests keep the moment on their fridge.
                 </p>
+                <ul className="mt-4 space-y-2 text-stone-700">
+                  <li>✓ Send us your design or an example you like</li>
+                  <li>✓ Choose how many cards, with or without magnets</li>
+                  <li>✓ We reply on WhatsApp with the price and a preview</li>
+                </ul>
+                <Link href="/event-cards" className="btn-primary mt-6">
+                  Request event cards
+                </Link>
               </Reveal>
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                {cards.map((product, i) => (
-                  <Reveal key={product.id} delay={i * 90}>
-                    <ProductCard {...product} />
-                  </Reveal>
-                ))}
-              </div>
             </div>
           </div>
         </section>
-      )}
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-12" aria-labelledby="faq-title">

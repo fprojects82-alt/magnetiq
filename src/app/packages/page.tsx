@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { PRINT_LINES, PRINT_LINE_KEYS } from "@/lib/catalog";
+import { PRINT_LINES, PRINT_LINE_KEYS, shopHref } from "@/lib/catalog";
 import { getLineBundles } from "@/lib/bundles";
 import { BackButton } from "@/components/BackButton";
-import { PackageCard } from "@/components/PackageCard";
 import { PriceList } from "@/components/PriceList";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default async function PackagesPage() {
-  const [lines, others] = await Promise.all([
-    Promise.all(PRINT_LINE_KEYS.map(async (key) => ({ line: PRINT_LINES[key], bundles: await getLineBundles(key) }))),
-    db.package.findMany({ where: { active: true, line: null }, orderBy: { sortOrder: "asc" } }),
-  ]);
+  const lines = await Promise.all(
+    PRINT_LINE_KEYS.map(async (key) => ({ line: PRINT_LINES[key], bundles: await getLineBundles(key) }))
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -32,7 +29,7 @@ export default async function PackagesPage() {
       {/* quick jump */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:max-w-3xl sm:grid-cols-3">
         {lines.map(({ line, bundles }) => (
-          <a key={line.key} href={`#${line.anchor}`} className="card-surface flex items-center gap-3 p-3 transition hover:border-brand">
+          <a key={line.key} href={shopHref(line)} className="card-surface flex items-center gap-3 p-3 transition hover:border-brand">
             <img src={line.cover} alt="" className="h-14 w-14 rounded-xl object-cover" />
             <span>
               <span className="block font-semibold text-stone-800">{line.name}</span>
@@ -84,31 +81,25 @@ export default async function PackagesPage() {
 
             <div>
               {bundles.length === 0 ? (
-                <p className="text-stone-500">These bundles are coming back soon. Message us on WhatsApp to order.</p>
+                <p className="text-stone-500">Coming back soon. Message us on WhatsApp to order.</p>
               ) : (
-                <PriceList line={line} bundles={bundles} />
+                <>
+                  <PriceList line={line} bundles={bundles} />
+                  <Link href={shopHref(line)} className="btn-primary mt-4 w-full">
+                    Order {line.name}
+                  </Link>
+                </>
               )}
             </div>
           </div>
         </section>
       ))}
 
-      {others.length > 0 && (
-        <section className="mt-14">
-          <h2 className="section-title">Gift sets</h2>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {others.map((pkg) => (
-              <PackageCard key={pkg.id} {...pkg} />
-            ))}
-          </div>
-        </section>
-      )}
-
       <div className="mt-14 rounded-3xl bg-brand p-6 text-center text-white sm:p-10">
         <p className="font-display text-2xl font-bold italic">Planning an engagement or wedding?</p>
-        <p className="mt-2 text-white/85">Our event cards come with your photo as a magnet guests take home.</p>
+        <p className="mt-2 text-white/85">We print event cards and can add a photo magnet or 3D sticker on each one.</p>
         <Link href="/event-cards" className="mt-4 inline-flex min-h-[48px] items-center rounded-full bg-white px-6 font-semibold text-brand">
-          See event cards
+          Request event cards
         </Link>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// Static facts about the two print lines, taken from the Magnetiq price sheets.
+// Static facts about the product lines, taken from the Magnetiq price sheets.
 // Prices themselves live in the database (Package rows) so they stay editable
 // from the admin panel; this file only holds the copy and imagery for each line.
 
@@ -93,6 +93,14 @@ export const PRINT_LINES: Record<PrintLineKey, PrintLine> = {
     priceSheet: "/media/price-sheet-stickers.webp",
   },
 };
+
+export function getPrintLineByAnchor(anchor: string): PrintLine | null {
+  return Object.values(PRINT_LINES).find((l) => l.anchor === anchor) ?? null;
+}
+
+export function shopHref(line: PrintLine, size?: number): string {
+  return size ? `/shop/${line.anchor}?size=${size}` : `/shop/${line.anchor}`;
+}
 
 export function getPrintLine(key: string | null | undefined): PrintLine | null {
   if (key === "PRESSED" || key === "FLAT" || key === "STICKER") return PRINT_LINES[key];

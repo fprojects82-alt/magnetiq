@@ -24,7 +24,7 @@ export function SiteChrome({
   if (isAdmin) return <>{children}</>;
 
   // Pages with their own sticky order bar on phones: lift the WhatsApp bubble above it.
-  const hasStickyBar = /^\/packages\/[^/]+$/.test(pathname ?? "");
+  const hasStickyBar = /^\/shop\/[^/]+$/.test(pathname ?? "");
 
   return (
     <>

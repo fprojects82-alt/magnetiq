@@ -34,9 +34,9 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
         <div>
           <h2 className="mb-3 font-semibold">Shop</h2>
           <ul className="space-y-2 text-sm text-white/85">
-            <li><Link href="/packages#pressed" className="hover:underline">Pressed magnets (5 × 5 cm)</Link></li>
-            <li><Link href="/packages#flat" className="hover:underline">Flat magnets (7 × 10 cm)</Link></li>
-            <li><Link href="/packages#stickers" className="hover:underline">3D stickers (3 × 3 cm)</Link></li>
+            <li><Link href="/shop/pressed" className="hover:underline">Pressed magnets (5 × 5 cm)</Link></li>
+            <li><Link href="/shop/flat" className="hover:underline">Flat magnets (7 × 10 cm)</Link></li>
+            <li><Link href="/shop/stickers" className="hover:underline">3D stickers (3 × 3 cm)</Link></li>
             <li><Link href="/event-cards" className="hover:underline">Event cards</Link></li>
             <li><Link href="/cart" className="hover:underline">Your cart</Link></li>
           </ul>

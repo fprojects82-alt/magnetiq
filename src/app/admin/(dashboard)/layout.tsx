@@ -4,6 +4,7 @@ import { logout } from "../actions";
 const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/card-requests", label: "Card requests" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/packages", label: "Packages" },
   { href: "/admin/offers", label: "Offers" },
@@ -47,6 +48,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button type="submit" className="text-sm font-medium text-stone-500">Log out</button>
           </form>
         </div>
+        {/* The sidebar is hidden on phones, so give them a scrollable tab bar instead. */}
+        <nav aria-label="Admin" className="flex gap-1 overflow-x-auto border-b border-stone-200 bg-white px-2 py-2 sm:hidden">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-brand/10 hover:text-brand"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
         <main className="p-4 sm:p-8">{children}</main>
       </div>
     </div>
