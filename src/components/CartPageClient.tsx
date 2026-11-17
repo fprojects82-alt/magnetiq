@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { MoreProducts } from "./MoreProducts";
 import { useCart } from "@/context/CartContext";
 import { useLang } from "@/context/LangContext";
 import { bundleLabel, lineForSlug, lineText } from "@/lib/catalog";
@@ -111,10 +112,9 @@ export function CartPageClient() {
               </li>
             );
           })}
-          <li>
-            <Link href="/packages" className="text-sm font-semibold text-brand hover:underline">
-              {c.addMore}
-            </Link>
+          <li className="pt-2">
+            <h2 className="mb-2 text-sm font-bold text-stone-700">{c.addMore}</h2>
+            <MoreProducts />
           </li>
         </ul>
 

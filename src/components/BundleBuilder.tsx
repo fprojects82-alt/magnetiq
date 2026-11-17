@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { bundleLabel, getPrintLine, lineText, perPiece } from "@/lib/catalog";
 import { useLang } from "@/context/LangContext";
 import { badgeText } from "@/lib/i18n";
 import { BookmarkDesign, BookmarkDesigner, DEFAULT_BOOKMARK, normalizeHex } from "./BookmarkDesigner";
 import { usePhotoUploads } from "@/lib/usePhotoUploads";
+import { AddedToCartSheet } from "./AddedToCartSheet";
+import { StickerPreview } from "./StickerPreview";
 import { CartItem, EventCardText } from "@/lib/types";
 
 export interface BundleOption {
@@ -35,8 +36,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
   const { lang, t, fmt: formatEGP } = useLang();
   const tb = t.builder;
   const lt = line ? lineText(line, lang) : null;
-  const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, itemCount, subtotal, isHydrated } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photosHeadingId = useId();
 
@@ -57,7 +57,8 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [added, setAdded] = useState(false);
+  const [lastAdded, setLastAdded] = useState<{ label: string; imageUrl: string } | null>(null);
+  const closeSheet = useCallback(() => setLastAdded(null), []);
 
   const includesCard = bundle.composition.toLowerCase().includes("card");
   const slots = bundle.photoSlots;
@@ -82,7 +83,6 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
 
   function chooseBundle(next: BundleOption) {
     setSlug(next.slug);
-    setAdded(false);
     setError(null);
   }
 
@@ -132,7 +132,7 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
     return true;
   }
 
-  function handleAdd(goToCheckout: boolean) {
+  function handleAdd() {
     if (!validate()) return;
     setError(null);
     const customText: EventCardText | undefined = isBookmark
@@ -158,11 +158,10 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
       customText,
     };
     addItem(item);
-    if (goToCheckout) {
-      router.push("/checkout");
-      return;
-    }
-    setAdded(true);
+    setLastAdded({
+      label: bundleLabel(bundle.slug, bundle.name, lang),
+      imageUrl: entries.find((e) => e.status === "done" && e.url)?.url ?? bundle.sampleImageUrl,
+    });
     clear();
     setCopies({});
     setPhotosLater(false);
@@ -430,6 +429,10 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
         </label>
       </section>
 
+      {line?.key === "STICKER" && (
+        <StickerPreview photos={entries.filter((e) => e.status !== "error").map((e) => e.preview)} />
+      )}
+
       {includesCard && (
         <section className="mt-8 space-y-3">
           <h2 className="step-title">{tb.cardDetails}</h2>
@@ -464,37 +467,35 @@ export function BundleBuilder({ bundles, initialSlug, lineKey }: BundleBuilderPr
           <div className="flex shrink-0 gap-2 sm:mt-4">
             <button
               type="button"
-              onClick={() => handleAdd(false)}
-              className={`btn-outline hidden sm:inline-flex ${!canAdd ? "opacity-60" : ""}`}
-            >
-              {t.common.addToCart}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAdd(true)}
+              onClick={handleAdd}
               className={`btn-primary px-5 sm:flex-1 ${!canAdd ? "opacity-70" : ""}`}
             >
-              {uploadingCount > 0 ? tb.uploadingN(uploadingCount) : t.common.orderNow}
+              {uploadingCount > 0 ? tb.uploadingN(uploadingCount) : `🛒 ${t.common.addToCart}`}
             </button>
+            {isHydrated && itemCount > 0 && (
+              <Link href="/cart" className="btn-outline hidden sm:inline-flex">
+                {tb.cartShort(itemCount)} {lang === "ar" ? "←" : "→"}
+              </Link>
+            )}
           </div>
         </div>
         <p role="alert" aria-live="assertive" className="mx-auto max-w-5xl text-sm text-red-600 empty:hidden sm:mt-3">
           {error}
         </p>
-        <button type="button" onClick={() => handleAdd(false)} className="mx-auto mt-1 block text-xs font-semibold text-brand underline sm:hidden">
-          {tb.addKeep}
-        </button>
+        {isHydrated && itemCount > 0 && (
+          <Link href="/cart" className="mx-auto mt-1 block text-center text-xs font-semibold text-brand underline sm:hidden">
+            {tb.cartReady(itemCount, formatEGP(subtotal))} · {tb.goPay} {lang === "ar" ? "←" : "→"}
+          </Link>
+        )}
       </div>
 
-      {added && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-green-50 p-4 text-sm text-green-800" role="status">
-          <span className="font-semibold">{tb.added}</span>
-          <span className="flex gap-2">
-            <Link href="/cart" className="rounded-full border border-green-700 px-4 py-1.5 font-semibold">{tb.viewCart}</Link>
-            <Link href="/checkout" className="rounded-full bg-green-700 px-4 py-1.5 font-semibold text-white">{tb.checkout}</Link>
-          </span>
-        </div>
-      )}
+      <AddedToCartSheet
+        open={lastAdded !== null}
+        itemLabel={lastAdded?.label ?? ""}
+        imageUrl={lastAdded?.imageUrl ?? bundle.sampleImageUrl}
+        currentLine={line?.key ?? null}
+        onClose={closeSheet}
+      />
     </div>
   );
 }
